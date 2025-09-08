@@ -1,6 +1,6 @@
 library(tidyverse)
 
-
+# locatus data voor winkeldynamiek
 data_locatus <- readr::read_csv(
   "00 ruwe data/ruw locatus/notebook_locatus.csv"
 ) |>
@@ -65,10 +65,10 @@ df_loc_def |>
     labels = scales::label_comma(big.mark = ".", decimal.mark = ",")
   ) +
   facet_wrap(~name, scale = 'free_y')
-ggsave("R 03 output/fig_locatus.svg", width = 12, height = 4)
+ggsave("R 03 tabellen/fig_locatus.svg", width = 12, height = 4)
 
 tabel <- df_loc_def |>
   pivot_wider(names_from = dg_nd, values_from = value)
 
 
-write.xlsx(tabel, "04 output tabellen/tabel_locatus.xlsx")
+write.xlsx(tabel, "03 tabellen/tabel_locatus.xlsx")
