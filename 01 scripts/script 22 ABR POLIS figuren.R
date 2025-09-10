@@ -57,7 +57,7 @@ c <- data_woonwerk_sector_ams |>
 ggsave("03 tabellen/fig_abrpolis_ww.svg", height = 4, width = 12)
 
 # samenvoegen figuren
-a + b + c
+d<- a + b + c
 ggsave("03 tabellen/fig_abrpolis_totaal.svg", height = 4, width = 12)
 
 
