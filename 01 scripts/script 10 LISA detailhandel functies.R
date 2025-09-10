@@ -31,7 +31,7 @@ my_col_figure <- function(
       breaks = c(2014, 2016, 2018, 2020, 2022, 2024)
     ) +
     guides(fill = guide_legend(reverse = F, nrow = 1)) +
-    facet_wrap(vars({{ facet_var }}), nrow = 1, scales = 'free_y')
+    facet_wrap(vars({{ facet_var }}), nrow = 1)
 }
 
 
