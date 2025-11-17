@@ -48,10 +48,10 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
-/00 ruwe data/
-/01 lookup tabellen/
-/03 tabellen/
+/00 data/
+/01 references/
+/04 reports/
 
-/01 scripts/00 scripts steekproefkader en respons
-/01 scripts/01 scripts voorbeelden SvdS
+/03 scripts/00 scripts steekproefkader en respons
+/03 scripts/00 scripts voorbeelden SvdS
 

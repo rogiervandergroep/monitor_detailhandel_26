@@ -1,0 +1,211 @@
+library(tidyverse)
+library(openxlsx)
+
+source("02 scr/03 script ggplot functies.R")
+
+# pub_tabel_ams_sd <- read_rds("01 references/pub_tabel_ams_sd.rds")
+# pub_tabel_sd_sd <- read_rds("01 references/pub_tabel_sd_sd.rds")
+# pub_tabel_geb_geb <- read_rds("01 references/pub_tabel_geb_geb.rds")
+
+pub_tabel_ams_sd_tot <- read_rds("01 references/pub_tabel_ams_sd_tot.rds")
+pub_tabel_sd_sd_tot <- read_rds("01 references/pub_tabel_sd_sd_tot.rds")
+pub_tabel_geb_geb_tot <- read_rds("01 references/pub_tabel_geb_geb_tot.rds")
+
+
+# fig dagelijks niet dagelijks amsterdam
+pub_tabel_ams_sd_tot$ams_hoofd |>
+
+  my_plot(
+    y_var = monitor,
+    afzet_var = eigen_gebied
+  ) +
+  facet_wrap(~productgroep)
+
+ggsave("04 reports/04 figuren/fig_1_binding_totaal.svg", width = 12, height = 4)
+
+
+# fig dagelijks niet dagelijks amsterdam
+pub_tabel_ams_sd_tot$ams_sub |>
+  my_plot(
+    y_var = monitor,
+    afzet_var = eigen_gebied
+  ) +
+  facet_wrap(~productgroep)
+
+ggsave(
+  "04 reports/04 figuren/fig_1_binding_subgroep.svg",
+  width = 12,
+  height = 4
+)
+
+bind_rows(
+  pub_tabel_ams_sd_tot$ams_hoofd |>
+    filter(productgroep == 'niet-dagelijks'),
+
+  pub_tabel_ams_sd_tot$ams_sub
+) |>
+  mutate(
+    productgroep = str_replace_all(
+      productgroep,
+      "niet-dagelijks",
+      "totaal niet-dagelijks"
+    )
+  ) |>
+
+  my_plot(
+    y_var = monitor,
+    afzet_var = eigen_gebied
+  ) +
+  facet_wrap(~productgroep, nrow = 1)
+ggsave(
+  "04 reports/04 figuren/fig_1_binding_prod_en_sub_groep.svg",
+  width = 12,
+  height = 4
+)
+
+
+# fig dagelijks niet dagelijks amsterdam
+pub_tabel_ams_sd_tot$ams_prodgroep |>
+
+  my_plot(
+    y_var = monitor,
+    afzet_var = eigen_gebied
+  ) +
+  facet_wrap(~productgroep)
+
+ggsave(
+  "04 reports/04 figuren/fig_1_binding_prodgroep.svg",
+  width = 12,
+  height = 6
+)
+
+
+# fig dagelijks niet dagelijks naar stadsdeel
+pub_tabel_sd_sd_tot$ams_hoofd |>
+  filter(productgroep == 'dagelijks') |>
+  filter(
+    woon_gebied_naam != 'Westpoort',
+    !is.na(woon_gebied_naam)
+  ) |>
+  filter(
+    woon_gebied_naam != 'Weesp' | monitor != 'monitor 2020',
+    woon_gebied_naam != 'Weesp' | monitor != 'monitor 2022'
+  ) |>
+  my_plot(
+    y_var = fct_rev(woon_gebied_naam),
+    afzet_var = eigen_gebied
+  ) +
+  facet_wrap(~monitor, nrow = 1)
+
+ggsave(
+  "04 reports/04 figuren/fig_2_binding_dagelijks_sd.svg",
+  width = 12,
+  height = 4
+)
+
+# fig dagelijks niet dagelijks naar stadsdeel
+pub_tabel_sd_sd_tot$ams_hoofd |>
+  filter(productgroep == 'niet-dagelijks') |>
+  filter(
+    woon_gebied_naam != 'Westpoort',
+    !is.na(woon_gebied_naam)
+  ) |>
+  filter(
+    woon_gebied_naam != 'Weesp' | monitor != 'monitor 2020',
+    woon_gebied_naam != 'Weesp' | monitor != 'monitor 2022'
+  ) |>
+  my_plot(
+    y_var = fct_rev(woon_gebied_naam),
+    afzet_var = eigen_gebied
+  ) +
+  facet_wrap(~monitor, nrow = 1)
+
+ggsave(
+  "04 reports/04 figuren/fig_2_binding_niet-dagelijks_sd.svg",
+  width = 12,
+  height = 4
+)
+
+
+# fig dagelijks niet dagelijks naar stadsdeel
+pub_tabel_sd_sd_tot$ams_sub |>
+  filter(
+    monitor == 'monitor 2026',
+    productgroep %in% c('recreatief', 'doelgericht', 'niet-dagelijks'),
+    woon_gebied_naam != 'Westpoort',
+    !is.na(woon_gebied_naam)
+  ) |>
+  my_plot(
+    y_var = fct_rev(woon_gebied_naam),
+    afzet_var = eigen_gebied
+  ) +
+  facet_wrap(~productgroep, nrow = 1)
+
+ggsave(
+  "04 reports/04 figuren/fig_2_binding_recr_doelg_sd.svg",
+  width = 12,
+  height = 4
+)
+
+### kaarten met binding per ggw-gebied ---
+
+geo_gebieden <- sf::read_sf(
+  "https://onderzoek.amsterdam.nl/static/datavisualisatie-onderzoek-en-statistiek/geo/amsterdam/2022/gebieden-2022-zw-geo.json"
+)
+
+df_gebied <- bind_rows(
+  pub_tabel_geb_geb_tot$ams_hoofd |>
+    filter(
+      eigen_gebied == 'zelfde GGW-gebied',
+      monitor == 'monitor 2026',
+      productgroep == 'niet-dagelijks'
+    ),
+
+  pub_tabel_geb_geb_tot$ams_sub |>
+    filter(
+      eigen_gebied == 'zelfde GGW-gebied',
+      monitor == 'monitor 2026',
+      !is.na(productgroep)
+    )
+) |>
+  group_by(productgroep) |>
+  mutate(
+    value_kl = gtools::quantcut(aandeel_gew_omz, 4),
+    value_kl_labels = gtools::quantcut(
+      aandeel_gew_omz,
+      4,
+      labels = c("veel lager dan gem", "lager", "hoger", "veel hoger dan gem")
+    )
+  )
+
+
+kaart <- df_gebied |>
+  left_join(geo_gebieden, by = c("woon_gebied_code" = "code")) |>
+  sf::st_as_sf()
+
+ggplot() +
+  geom_sf(data = geo_gebieden, color = "white", size = 0.5) +
+  geom_sf(
+    data = kaart,
+    aes(
+      fill = value_kl_labels
+    ),
+    color = "white",
+    size = 0.5
+  ) +
+  facet_wrap(~productgroep, ncol = 2) +
+  theme_os3("right") +
+  geom_sf_text(
+    data = kaart,
+    font = font,
+    aes(
+      label = label_percent(accuracy = 1)(aandeel_gew_omz),
+      color = value_kl_labels
+    )
+  ) +
+  scale_fill_manual(name = NULL, values = blauw_pal[c(6, 4, 2, 1)]) +
+  scale_color_manual(name = NULL, values = label_col[c(6, 4, 2, 1)]) +
+  guides(
+    fill = guide_legend(ncol = 1, reverse = F),
+    colour = "none"
+  )
