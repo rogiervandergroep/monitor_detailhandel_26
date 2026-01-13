@@ -17,7 +17,9 @@ wg_kol_namen <- c(
   "wink_stadsdeel_code",
   "wink_stadsdeel_naam",
   "wink_ggw_code",
-  "wink_ggw_naam"
+  "wink_ggw_naam",
+  "wink_oisnaam",
+  "wink_oiscode"
 )
 
 winkelgebieden <- read.xlsx(
@@ -150,22 +152,30 @@ group_var_20 <- c("w1", nd_20)
 group_var_22 <- c("v1", nd_22)
 group_var_24_26 <- c("v1_nw", nd_24_26)
 
-my_omzetcijfers_mutate <- function(x) {
-  x |>
-    mutate(
-      omzetcijfers = case_when(
-        productgroep == "dagelijks" ~ 1,
-        productgroep == "modeartikelen" ~ 0.188,
-        productgroep == "elektronica" ~ 0.084,
-        productgroep == "huishoudelijk" ~ 0.171,
-        productgroep == "woninginrichting" ~ 0.258,
-        productgroep == "doehetzelf" ~ 0.043,
-        productgroep == "planten" ~ 0.050,
-        productgroep == "media" ~ 0.080,
-        productgroep == "sportspel" ~ 0.032
-      )
-    )
-}
+# inlezen omzetcijfers
+df_omzet <- readxl::read_xlsx(
+  "01 references/weging_artikelgroepen.xlsx",
+  sheet = 2
+) |>
+  mutate(productgroep = str_trim(productgroep, "both"))
+
+
+# my_omzetcijfers_mutate <- function(x) {
+#   x |>
+#     mutate(
+#       omzetcijfers = case_when(
+#         productgroep == "dagelijks" ~ 1,
+#         productgroep == "modeartikelen" ~ 0.188,
+#         productgroep == "elektronica" ~ 0.084,
+#         productgroep == "huishoudelijk" ~ 0.171,
+#         productgroep == "woninginrichting" ~ 0.258,
+#         productgroep == "doehetzelf" ~ 0.043,
+#         productgroep == "planten" ~ 0.050,
+#         productgroep == "media" ~ 0.080,
+#         productgroep == "sportspel" ~ 0.032
+#       )
+#     )
+# }
 
 ### rechte tellingen per straat ---
 
@@ -174,27 +184,28 @@ tabel_dg_ndg_20 <- bind_rows(
     map(\(x) my_summary_ams(data_dg_ndg[["dg_ndg_20"]], x)) |>
     map2_df(productgroepen, \(x, y) mutate(x, productgroep = y)) |>
     add_column(gebied = 'gemeente') |>
-    my_omzetcijfers_mutate() |>
-    mutate(aantal_gew_omz = aantal_gew * omzetcijfers),
+    left_join(df_omzet[c("productgroep", "omz_2019")], by = "productgroep") |>
+    mutate(aantal_gew_omz = aantal_gew * omz_2019),
 
   group_var_20 |>
     map(\(x) my_summary_sd(data_dg_ndg[["dg_ndg_20"]], x)) |>
     map2_df(productgroepen, \(x, y) mutate(x, productgroep = y)) |>
     add_column(gebied = 'stadsdeel') |>
-    my_omzetcijfers_mutate() |>
-    mutate(aantal_gew_omz = aantal_gew * omzetcijfers),
+    left_join(df_omzet[c("productgroep", "omz_2019")], by = "productgroep") |>
+    mutate(aantal_gew_omz = aantal_gew * omz_2019),
 
   group_var_20 |>
     map(\(x) my_summary_ggw(data_dg_ndg[["dg_ndg_20"]], x)) |>
     map2_df(productgroepen, \(x, y) mutate(x, productgroep = y)) |>
     add_column(gebied = 'ggw_gebied') |>
-    my_omzetcijfers_mutate() |>
-    mutate(aantal_gew_omz = aantal_gew * omzetcijfers)
+    left_join(df_omzet[c("productgroep", "omz_2019")], by = "productgroep") |>
+    mutate(aantal_gew_omz = aantal_gew * omz_2019)
 ) |>
   filter(
     wink_code != 999,
     wink_code != 900
-  )
+  ) |>
+  rename(omzetcijfers = omz_2019)
 
 
 ### tabel 2022
@@ -203,27 +214,28 @@ tabel_dg_ndg_22 <- bind_rows(
     map(\(x) my_summary_ams(data_dg_ndg[["dg_ndg_22"]], x)) |>
     map2_df(productgroepen, \(x, y) mutate(x, productgroep = y)) |>
     add_column(gebied = 'gemeente') |>
-    my_omzetcijfers_mutate() |>
-    mutate(aantal_gew_omz = aantal_gew * omzetcijfers),
+    left_join(df_omzet[c("productgroep", "omz_2021")], by = "productgroep") |>
+    mutate(aantal_gew_omz = aantal_gew * omz_2021),
 
   group_var_22 |>
     map(\(x) my_summary_sd(data_dg_ndg[["dg_ndg_22"]], x)) |>
     map2_df(productgroepen, \(x, y) mutate(x, productgroep = y)) |>
     add_column(gebied = 'stadsdeel') |>
-    my_omzetcijfers_mutate() |>
-    mutate(aantal_gew_omz = aantal_gew * omzetcijfers),
+    left_join(df_omzet[c("productgroep", "omz_2021")], by = "productgroep") |>
+    mutate(aantal_gew_omz = aantal_gew * omz_2021),
 
   group_var_22 |>
     map(\(x) my_summary_ggw(data_dg_ndg[["dg_ndg_22"]], x)) |>
     map2_df(productgroepen, \(x, y) mutate(x, productgroep = y)) |>
     add_column(gebied = 'ggw_gebied') |>
-    my_omzetcijfers_mutate() |>
-    mutate(aantal_gew_omz = aantal_gew * omzetcijfers)
+    left_join(df_omzet[c("productgroep", "omz_2021")], by = "productgroep") |>
+    mutate(aantal_gew_omz = aantal_gew * omz_2021)
 ) |>
   filter(
     wink_code != 999,
     wink_code != 900
-  )
+  ) |>
+  rename(omzetcijfers = omz_2021)
 
 
 ### tabel 2024
@@ -232,27 +244,28 @@ tabel_dg_ndg_24 <- bind_rows(
     map(\(x) my_summary_ams(data_dg_ndg[["dg_ndg_24"]], x)) |>
     map2_df(productgroepen, \(x, y) mutate(x, productgroep = y)) |>
     add_column(gebied = 'gemeente') |>
-    my_omzetcijfers_mutate() |>
-    mutate(aantal_gew_omz = aantal_gew * omzetcijfers),
+    left_join(df_omzet[c("productgroep", "omz_2023")], by = "productgroep") |>
+    mutate(aantal_gew_omz = aantal_gew * omz_2023),
 
   group_var_24_26 |>
     map(\(x) my_summary_sd(data_dg_ndg[["dg_ndg_24"]], x)) |>
     map2_df(productgroepen, \(x, y) mutate(x, productgroep = y)) |>
     add_column(gebied = 'stadsdeel') |>
-    my_omzetcijfers_mutate() |>
-    mutate(aantal_gew_omz = aantal_gew * omzetcijfers),
+    left_join(df_omzet[c("productgroep", "omz_2023")], by = "productgroep") |>
+    mutate(aantal_gew_omz = aantal_gew * omz_2023),
 
   group_var_24_26 |>
     map(\(x) my_summary_ggw(data_dg_ndg[["dg_ndg_24"]], x)) |>
     map2_df(productgroepen, \(x, y) mutate(x, productgroep = y)) |>
     add_column(gebied = 'ggw_gebied') |>
-    my_omzetcijfers_mutate() |>
-    mutate(aantal_gew_omz = aantal_gew * omzetcijfers)
+    left_join(df_omzet[c("productgroep", "omz_2023")], by = "productgroep") |>
+    mutate(aantal_gew_omz = aantal_gew * omz_2023)
 ) |>
   filter(
     wink_code != 999,
     wink_code != 900
-  )
+  ) |>
+  rename(omzetcijfers = omz_2023)
 
 
 ### tabel 2026
@@ -261,27 +274,28 @@ tabel_dg_ndg_26 <- bind_rows(
     map(\(x) my_summary_ams(data_dg_ndg[["dg_ndg_26"]], x)) |>
     map2_df(productgroepen, \(x, y) mutate(x, productgroep = y)) |>
     add_column(gebied = 'gemeente') |>
-    my_omzetcijfers_mutate() |>
-    mutate(aantal_gew_omz = aantal_gew * omzetcijfers),
+    left_join(df_omzet[c("productgroep", "omz_2024")], by = "productgroep") |>
+    mutate(aantal_gew_omz = aantal_gew * omz_2024),
 
   group_var_24_26 |>
     map(\(x) my_summary_sd(data_dg_ndg[["dg_ndg_26"]], x)) |>
     map2_df(productgroepen, \(x, y) mutate(x, productgroep = y)) |>
     add_column(gebied = 'stadsdeel') |>
-    my_omzetcijfers_mutate() |>
-    mutate(aantal_gew_omz = aantal_gew * omzetcijfers),
+    left_join(df_omzet[c("productgroep", "omz_2024")], by = "productgroep") |>
+    mutate(aantal_gew_omz = aantal_gew * omz_2024),
 
   group_var_24_26 |>
     map(\(x) my_summary_ggw(data_dg_ndg[["dg_ndg_26"]], x)) |>
     map2_df(productgroepen, \(x, y) mutate(x, productgroep = y)) |>
     add_column(gebied = 'ggw_gebied') |>
-    my_omzetcijfers_mutate() |>
-    mutate(aantal_gew_omz = aantal_gew * omzetcijfers)
+    left_join(df_omzet[c("productgroep", "omz_2024")], by = "productgroep") |>
+    mutate(aantal_gew_omz = aantal_gew * omz_2024)
 ) |>
   filter(
     wink_code != 999,
     wink_code != 900
-  )
+  ) |>
+  rename(omzetcijfers = omz_2024)
 
 
 ### rechte tellingen per gebied of stadsdeel ---
@@ -480,9 +494,17 @@ my_eigen_ams <- function(x) {
         wink_stadsdeel_naam == 'Buiten MRA' ~ 'Buiten MRA',
         TRUE ~ 'Amsterdam'
       )
+    ) |>
+    mutate(
+      eigen_gebied_centrum = case_when(
+        wink_stadsdeel_naam == 'online' ~ 'online',
+        wink_stadsdeel_naam == 'MRA' ~ 'MRA',
+        wink_stadsdeel_naam == 'Buiten MRA' ~ 'Buiten MRA',
+        wink_stadsdeel_naam == 'Centrum' ~ 'Centrum',
+        TRUE ~ 'overig Amsterdam'
+      )
     )
 }
-
 
 # functie om kolom toe te voegen met eigen gebied
 my_eigen_sd <- function(x) {
@@ -495,15 +517,34 @@ my_eigen_sd <- function(x) {
         wink_stadsdeel_code == 'Buiten MRA' ~ 'Buiten MRA',
         TRUE ~ 'overig Amsterdam'
       )
+    ) |>
+    mutate(
+      eigen_gebied_centrum = case_when(
+        wink_stadsdeel_naam == 'Centrum' ~ 'Centrum',
+        woon_gebied_code == wink_stadsdeel_code ~ "zelfde stadsdeel",
+        wink_stadsdeel_naam == 'online' ~ 'online',
+        wink_stadsdeel_naam == 'MRA' ~ 'MRA',
+        wink_stadsdeel_naam == 'Buiten MRA' ~ 'Buiten MRA',
+        TRUE ~ 'overig Amsterdam'
+      )
     )
 }
-
 
 # functie om kolom toe te voegen met eigen gebied
 my_eigen_geb <- function(x) {
   x |>
     mutate(
       eigen_gebied = case_when(
+        woon_gebied_code == wink_ggw_code ~ "zelfde GGW-gebied",
+        wink_ggw_code == 'online' ~ 'online',
+        wink_ggw_code == 'MRA' ~ 'MRA',
+        wink_ggw_code == 'Buiten MRA' ~ 'Buiten MRA',
+        TRUE ~ 'overig Amsterdam'
+      )
+    ) |>
+    mutate(
+      eigen_gebied_centrum = case_when(
+        wink_ggw_code %in% c('GA01', 'GA02') ~ 'GGW-gebieden Centrum',
         woon_gebied_code == wink_ggw_code ~ "zelfde GGW-gebied",
         wink_ggw_code == 'online' ~ 'online',
         wink_ggw_code == 'MRA' ~ 'MRA',
@@ -695,6 +736,36 @@ my_sum_eigen_gebied <- function(x) {
     )
 }
 
+
+my_sum_eigen_gebied_centrum <- function(x) {
+  x |>
+    group_by(
+      monitor,
+      woon_gebied_code,
+      woon_gebied_naam,
+      productgroep,
+      eigen_gebied_centrum
+    ) |>
+    summarise(aandeel_gew_omz = sum(aandeel_gew_omz)) |>
+    mutate(
+      eigen_gebied_centrum = factor(
+        eigen_gebied_centrum,
+        levels = c(
+          "GGW-gebieden Centrum",
+          "Centrum",
+          "zelfde GGW-gebied",
+          "zelfde stadsdeel",
+          'overig Amsterdam',
+          "Amsterdam",
+          "MRA",
+          "Buiten MRA",
+          "online"
+        )
+      )
+    )
+}
+
+
 pub_tabel_ams_sd_tot <- pub_tabel_ams_sd |>
   map(\(x) my_sum_eigen_gebied(x))
 
@@ -705,6 +776,16 @@ pub_tabel_geb_geb_tot <- pub_tabel_geb_geb |>
   map(\(x) my_sum_eigen_gebied(x))
 
 
+pub_tabel_ams_sd_centrum <- pub_tabel_ams_sd |>
+  map(\(x) my_sum_eigen_gebied_centrum(x))
+
+pub_tabel_sd_sd_centrum <- pub_tabel_sd_sd |>
+  map(\(x) my_sum_eigen_gebied_centrum(x))
+
+pub_tabel_geb_geb_centrum <- pub_tabel_geb_geb |>
+  map(\(x) my_sum_eigen_gebied_centrum(x))
+
+
 write_rds(pub_tabel_ams_sd, "01 references/pub_tabel_ams_sd.rds")
 write_rds(pub_tabel_sd_sd, "01 references/pub_tabel_sd_sd.rds")
 write_rds(pub_tabel_geb_geb, "01 references/pub_tabel_geb_geb.rds")
@@ -712,3 +793,67 @@ write_rds(pub_tabel_geb_geb, "01 references/pub_tabel_geb_geb.rds")
 write_rds(pub_tabel_ams_sd_tot, "01 references/pub_tabel_ams_sd_tot.rds")
 write_rds(pub_tabel_sd_sd_tot, "01 references/pub_tabel_sd_sd_tot.rds")
 write_rds(pub_tabel_geb_geb_tot, "01 references/pub_tabel_geb_geb_tot.rds")
+
+write_rds(
+  pub_tabel_ams_sd_centrum,
+  "01 references/pub_tabel_ams_sd_centrum.rds"
+)
+write_rds(pub_tabel_sd_sd_centrum, "01 references/pub_tabel_sd_sd_centrum.rds")
+write_rds(
+  pub_tabel_geb_geb_centrum,
+  "01 references/pub_tabel_geb_geb_centrum.rds"
+)
+
+## weghalen dagelijks uit sub en productgoep
+
+my_list <- function(a, b, c) {
+  list(
+    ams_sd = bind_rows(
+      a[["ams_hoofd"]],
+      a[["ams_sub"]] |>
+        filter(productgroep != 'dagelijks'),
+      a[["ams_prodgroep"]] |>
+        filter(productgroep != 'dagelijks')
+    ),
+
+    sd_sd = bind_rows(
+      b[["ams_hoofd"]],
+      b[["ams_sub"]] |>
+        filter(productgroep != 'dagelijks'),
+      b[["ams_prodgroep"]] |>
+        filter(productgroep != 'dagelijks')
+    ),
+
+    geb_geb = bind_rows(
+      c[["ams_hoofd"]],
+      c[["ams_sub"]] |>
+        filter(productgroep != 'dagelijks'),
+      c[["ams_prodgroep"]] |>
+        filter(productgroep != 'dagelijks')
+    )
+  )
+}
+
+
+tabel_binding_basis <- my_list(
+  a = pub_tabel_ams_sd,
+  b = pub_tabel_sd_sd,
+  c = pub_tabel_geb_geb
+) |>
+  write.xlsx("04 reports/03 tabellen/tabel_binding_basis.xlsx")
+
+
+tabel_binding_totaal <- my_list(
+  a = pub_tabel_ams_sd_tot,
+  b = pub_tabel_sd_sd_tot,
+  c = pub_tabel_geb_geb_tot
+) |>
+  write.xlsx("04 reports/03 tabellen/tabel_binding_totaal.xlsx")
+
+
+tabel_binding_centrum <- my_list(
+  a = pub_tabel_ams_sd_centrum,
+  b = pub_tabel_sd_sd_centrum,
+  c = pub_tabel_geb_geb_centrum
+) |>
+  write.xlsx("04 reports/03 tabellen/tabel_binding_centrum.xlsx")

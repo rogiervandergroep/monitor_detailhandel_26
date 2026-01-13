@@ -13,7 +13,9 @@ wg_kol_namen <- c(
   "wink_stadsdeel_code",
   "wink_stadsdeel_naam",
   "wink_ggw_code",
-  "wink_ggw_naam"
+  "wink_ggw_naam",
+  "winkelgebied_oisnaam",
+  "winkelgebied_oiscode"
 )
 
 winkelgebieden <- openxlsx::read.xlsx(
@@ -31,140 +33,103 @@ list_rapportcijfers = list()
 
 ### rapportcijfers 2020 ---
 
-# rapportcijfers voor winkelgebieden dagelijkse boodschappen
-list_rapportcijfers[["rap_20_dg"]] <- data_totaal[["data_20_weeg"]] |>
-  select(any_of(c("respondent_id", "weeg_ams_ink", "w2", rap[["20_22_v7"]]))) |>
-  add_column(productgroep = "winkelgebied voor dagelijkse boodschappen") |>
-  filter(!is.na(w2)) |>
-  mutate(w2 = str_trim(as.character(w2))) |>
-  left_join(winkelgebieden, by = c("w2" = "wink_code")) |>
-  rename("wink_code" = "w2")
+my_rapport_list <- function(dataset, rapvars, winkelvar, prodgroep) {
+  basis <- data_totaal[[dataset]] |>
+    rename(wink_code = {{ winkelvar }}) |>
+    select(any_of(c(
+      "respondent_id",
+      "weeg_ams_ink",
+      "wink_code",
+      rap[[rapvars]]
+    ))) |>
+    add_column(productgroep = prodgroep) |>
+    filter(!is.na(wink_code)) |>
+    mutate(wink_code = str_trim(as.character(wink_code))) |>
+    left_join(winkelgebieden, by = "wink_code")
 
-# rapportcijfers voor winkelgebieden om te winkelen
-list_rapportcijfers[["rap_20_ndg"]] <- data_totaal[["data_20_weeg"]] |>
-  select(any_of(c(
-    "respondent_id",
-    "weeg_ams_ink",
-    "v20",
-    rap[["20_22_v22"]]
-  ))) |>
-  add_column(productgroep = "winkelgebied voor niet-dagelijkse boodschappen") |>
-  filter(!is.na(v20)) |>
-  mutate(v20 = str_trim(as.character(v20))) |>
-  left_join(winkelgebieden, by = c("v20" = "wink_code")) |>
-  rename("wink_code" = "v20")
+  # verwijder het algemene rapportcijfer
+  rap_selectie_items <- rap[[rapvars]][-1]
+  rap_selectie_een <- rap[[rapvars]][1]
+
+  # berekening gemiddelde rapportcijfers van items
+  gem <- basis |>
+    select(respondent_id, wink_code, all_of(rap_selectie_items)) |>
+    pivot_longer(cols = all_of(rap_selectie_items)) |>
+    group_by(respondent_id, wink_code) |>
+    summarise("{rap_selectie_een}_gem" := mean(value, na.rm = T))
+
+  output <- basis |>
+    left_join(gem, by = c("respondent_id", "wink_code"))
+
+  print(output)
+}
+
+list_rapportcijfers[["rap_20_dg"]] <- my_rapport_list(
+  dataset = 'data_20_weeg',
+  rapvars = '20_22_v7',
+  winkelvar = 'w2',
+  prodgroep = "winkelgebied voor dagelijkse boodschappen"
+)
+
+list_rapportcijfers[["rap_20_ndg"]] <- my_rapport_list(
+  dataset = 'data_20_weeg',
+  rapvars = '20_22_v22',
+  winkelvar = 'v20',
+  prodgroep = "winkelgebied om te winkelen"
+)
 
 
 ### rapportcijfers 2022 ---
 
-# winkelgebieden dagelijks
-list_rapportcijfers[["rap_22_dg"]] <- data_totaal[["data_22_weeg"]] |>
-  select(any_of(c("respondent_id", "weeg_ams_ink", "v4", rap[["20_22_v7"]]))) |>
-  add_column(productgroep = "winkelgebied voor dagelijkse boodschappen") |>
-  filter(!is.na(v4)) |>
-  mutate(v4 = str_trim(as.character(v4))) |>
-  left_join(winkelgebieden, by = c("v4" = "wink_code")) |>
-  rename("wink_code" = "v4")
-
-
-# winkelgebieden dagelijks
-list_rapportcijfers[["rap_22_ndg"]] <- data_totaal[["data_22_weeg"]] |>
-  select(any_of(c(
-    "respondent_id",
-    "weeg_ams_ink",
-    "v20",
-    rap[["20_22_v22"]]
-  ))) |>
-  add_column(productgroep = "winkelgebied voor niet-dagelijkse boodschappen") |>
-  filter(!is.na(v20)) |>
-  mutate(v20 = str_trim(as.character(v20))) |>
-  left_join(winkelgebieden, by = c("v20" = "wink_code")) |>
-  rename("wink_code" = "v20")
-
+# dagelijks
+list_rapportcijfers[["rap_22_dg"]] <- my_rapport_list(
+  dataset = 'data_22_weeg',
+  rapvars = '20_22_v7',
+  winkelvar = 'v4',
+  prodgroep = "winkelgebied voor dagelijkse boodschappen"
+)
+# niet dagelijks
+list_rapportcijfers[["rap_22_ndg"]] <- my_rapport_list(
+  dataset = 'data_22_weeg',
+  rapvars = '20_22_v22',
+  winkelvar = 'v20',
+  prodgroep = "winkelgebied om te winkelen"
+)
 
 ### rapportcijfers 2024 ---
 
-# winkelgebieden dagelijks
-list_rapportcijfers[["rap_24_dg"]] <- data_totaal[["data_24_weeg"]] |>
-  select(any_of(c(
-    "respondent_id",
-    "weeg_ams_ink",
-    "v4_nw",
-    rap[["24_26_v7"]]
-  ))) |>
-  add_column(productgroep = "winkelgebied voor dagelijkse boodschappen") |>
-  filter(!is.na(v4_nw)) |>
-  mutate(v4_nw = str_trim(as.character(v4_nw))) |>
-  left_join(winkelgebieden, by = c("v4_nw" = "wink_code")) |>
-  rename("wink_code" = "v4_nw")
-
-# winkelgebieden om te winkelen
-list_rapportcijfers[["rap_24_ndg"]] <- data_totaal[["data_24_weeg"]] |>
-  select(any_of(c(
-    "respondent_id",
-    "weeg_ams_ink",
-    "v20",
-    rap[["24_26_v22"]]
-  ))) |>
-  add_column(productgroep = "winkelgebied voor niet-dagelijkse boodschappen") |>
-  filter(!is.na(v20)) |>
-  mutate(v20 = str_trim(as.character(v20))) |>
-  left_join(winkelgebieden, by = c("v20" = "wink_code")) |>
-  rename("wink_code" = "v20")
+# dagelijks
+list_rapportcijfers[["rap_24_dg"]] <- my_rapport_list(
+  dataset = 'data_24_weeg',
+  rapvars = '24_26_v7',
+  winkelvar = 'v4_nw',
+  prodgroep = "winkelgebied voor dagelijkse boodschappen"
+)
+# niet dagelijks
+list_rapportcijfers[["rap_24_ndg"]] <- my_rapport_list(
+  dataset = 'data_24_weeg',
+  rapvars = '24_26_v22',
+  winkelvar = 'v20',
+  prodgroep = "winkelgebied om te winkelen"
+)
 
 
 ### rapportcijfers 2026 ---
 
-# winkelgebieden dagelijks
-list_rapportcijfers[["rap_26_dg"]] <- data_totaal[["data_26_weeg"]] |>
-  select(any_of(c(
-    "respondent_id",
-    "weeg_ams_ink",
-    "v4_nw",
-    rap[["24_26_v7"]]
-  ))) |>
-  add_column(productgroep = "winkelgebied voor dagelijkse boodschappen") |>
-  filter(!is.na(v4_nw)) |>
-  mutate(v4_nw = str_trim(as.character(v4_nw))) |>
-  left_join(winkelgebieden, by = c("v4_nw" = "wink_code")) |>
-  rename("wink_code" = "v4_nw")
+# dagelijks
+list_rapportcijfers[["rap_26_dg"]] <- my_rapport_list(
+  dataset = 'data_26_weeg',
+  rapvars = '24_26_v7',
+  winkelvar = 'v4_nw',
+  prodgroep = "winkelgebied voor dagelijkse boodschappen"
+)
+# niet dagelijks
+list_rapportcijfers[["rap_26_ndg"]] <- my_rapport_list(
+  dataset = 'data_26_weeg',
+  rapvars = '24_26_v22',
+  winkelvar = 'v20',
+  prodgroep = "winkelgebied om te winkelen"
+)
 
-
-# winkelgebieden om te winkelen
-list_rapportcijfers[["rap_26_ndg"]] <- data_totaal[["data_26_weeg"]] |>
-  select(any_of(c(
-    "respondent_id",
-    "weeg_ams_ink",
-    "v20",
-    rap[["24_26_v22"]]
-  ))) |>
-  add_column(productgroep = "winkelgebied voor niet-dagelijkse boodschappen") |>
-  filter(!is.na(v20)) |>
-  mutate(v20 = str_trim(as.character(v20))) |>
-  left_join(winkelgebieden, by = c("v20" = "wink_code")) |>
-  rename("wink_code" = "v20")
-
-
-# #chistiaan huygensplein en weesp aanpassen
-# my_weesp <- function(x) {
-#   x |>
-#     mutate(
-#       winkelgebied_code = case_when(
-#         winkelgebied_code == '105' ~ '106',
-#         winkelgebied_code == '208' ~ '312',
-#         TRUE ~ winkelgebied_code
-#       )
-#     ) |>
-
-#     mutate(
-#       winkelgebied_naam = case_when(
-#         winkelgebied_naam ==
-#           "Christiaan Huygensplein, Watergraafsmeer, Oost" ~ "Christiaan Huygensplein, Helmholzstraat, Watergraafsmeer, Oost",
-#         winkelgebied_naam ==
-#           "Weesp" ~ 'Weesp, Centrum (oude binnenstad, Achtergracht, Nieuwstad, Oude gracht, Nieuwstraat)',
-#         TRUE ~ winkelgebied_naam
-#       )
-#     )
-# }
 
 write_rds(list_rapportcijfers, "01 references/data_rapportcijfers.rds")

@@ -4,6 +4,7 @@ source(
   "03 scripts/10 enquete opschonen data/script 00 inlezen en opschonen data.R"
 )
 
+
 lev_opl <- c(
   "basisopgeleid (maximaal mbo-1)",
   "mbo-opgeleid (mbo-2 tm 4 opleiding of havo of vwo afgerond)",
@@ -33,20 +34,31 @@ my_opl <- function(x) {
       opleiding_klas = case_when(
         opleid %in%
           c(
+            "geen opleiding afgerond",
             "lagere school, basisschool, speciaal onderwijs",
+            "lagere school / basisschool, speciaal (basis)onderwijs",
+            "VSO, voortgezet speciaal onderwijs",
             "geen opleiding gevolgd of enkele jaren lagere school, basisschool gevolgd",
+            "lager beroepsonderwijs (lbo, vbo, vso, mbo niveau 1, praktijkonderwijs)",
+            "vmbo",
             "VBO/LBO (huishoud-, ambachtsschool, LTS, interne bedrijfsopleiding), MBO-kort, BBL/BOL 1-2, leerlingwezen, ULO"
           ) ~
           "basisopgeleid (maximaal mbo-1)",
         opleid %in%
           c(
+            "mavo, mulo, ulo",
             "MAVO, MULO, VMBO",
+            "middelbaar beroepsonderwijs (mbo 2, 3 of 4)",
             "MBO-lang, interne opleiding op mbo-niveau, BBL/BOL 3-4",
-            "HAVO, VWO, HBS, MMS"
+            "HAVO, VWO, HBS, MMS",
+            "havo, mms",
+            "vwo, gymnasium, atheneum, hbs"
           ) ~
           'mbo-opgeleid (mbo-2 tm 4 opleiding of havo of vwo afgerond)',
         opleid %in%
           c(
+            "hoger beroepsonderwijs (hbo), associate degree, hbo-bachelor, wo-bachelor",
+            "wetenschappelijk onderwijs/universiteit/master, hbo-master, wo-master , PhD",
             "WO, universiteit, kandidaatsexamen",
             "HBO, interne opleiding op hbo-niveau"
           ) ~
@@ -57,6 +69,7 @@ my_opl <- function(x) {
     mutate(opleiding_klas = factor(opleiding_klas, levels = lev_opl))
 }
 
+
 ### herocoderen inkomen ---
 my_inkomen <- function(x) {
   x |>
@@ -64,6 +77,9 @@ my_inkomen <- function(x) {
       inkomen_klas = case_when(
         inkomen %in%
           c(
+            "minder dan €1000 per maand",
+            "tussen €1001 en €1350 per maand",
+            "tussen €1351 en €1750 per maand",
             "netto 1.000 euro per maand of minder",
             "netto tussen de 1.001 en 1.350 euro per maand",
             "netto tussen de 1.351 en 1.750 euro per maand"
@@ -71,6 +87,10 @@ my_inkomen <- function(x) {
           "inkomen laag",
         inkomen %in%
           c(
+            "tussen €1751 en €2400 per maand",
+            "tussen €2401 en €3050 per maand",
+            "tussen €3051 en €4000 per maand",
+            "tussen €4001 en €5000 per maand",
             "netto tussen de 1.751 en 3.050 euro per maand",
             "netto tussen de 3.051 en 4.000 euro per maand",
             "netto tussen de 4.001 en 5.000 euro per maand"
@@ -78,11 +98,14 @@ my_inkomen <- function(x) {
           "inkomen midden",
         inkomen %in%
           c(
+            "tussen €5001 en €6000 per maand",
+            "meer dan €6001 per maand",
+            "weet niet, geen antwoord",
             "netto tussen de 5.001 en 6.000 euro per maand",
             "netto meer dan 6.000 euro per maand"
           ) ~
           "inkomen hoog",
-        TRUE ~ 'weet niet, geen antwoord'
+        TRUE ~ 'inkomen onbekend'
       )
     ) |>
     mutate(inkomen_klas = factor(inkomen_klas, levels = lev_ink))
@@ -149,7 +172,8 @@ data_20_weeg <- data_20_weeg |>
     all_of(achtergrond_var),
     ~ haven::as_factor(.x)
   )) |>
-  my_herkomst()
+  my_herkomst() |>
+  rename(respondent_id = respondentid)
 
 data_22_weeg <- data_22_weeg |>
   mutate(across(

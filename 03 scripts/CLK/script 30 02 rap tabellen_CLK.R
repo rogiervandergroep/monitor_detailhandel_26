@@ -1,24 +1,16 @@
 ###################################
 # rapportcijfers per winkelgebied -
 ###################################
-#install.packages("svglite")
-library(svglite)
-library(tidyverse)
 
-#Aangepaste OS themes Rogier
-source("02 scr/03 script ggplot functies.R")
+library(tidyverse)
 
 # lijstje met vragen -
 rap <- read_rds("01 references/vragen_rapportcijfers.rds")
 
 df_rapcijfer_vragen <- bind_rows(
   tibble(
-    name = c(rap[["20_22_v7"]], "v6_gem", "v21_gem"),
-    label = c(
-      rap[["20_22_v7_v22_label"]],
-      "gemiddelde rapportcijfer dagelijks",
-      "gemiddelde rapportcijfer niet-dagelijks"
-    )
+    name = rap[["20_22_v7"]],
+    label = rap[["20_22_v7_v22_label"]]
   ),
 
   tibble(
@@ -45,7 +37,7 @@ list_rapportcijfers <- read_rds("01 references/data_rapportcijfers.rds")
 my_rapport_cijfers <- function(data, group_vars, vragen) {
   list_rapportcijfers[[data]] |>
     mutate(weeg_ams_ink = replace_na(weeg_ams_ink, 1)) |>
-    pivot_longer(cols = any_of(c(rap[[vragen]], "v6_gem", "v21_gem"))) |>
+    pivot_longer(cols = any_of(rap[[vragen]])) |>
     group_by(
       name,
       productgroep,
@@ -69,9 +61,7 @@ vars_wk = c(
   "wink_code",
   "wink_naam",
   "wink_stadsdeel_code",
-  "wink_stadsdeel_naam",
-  "winkelgebied_oisnaam",
-  "winkelgebied_oiscode"
+  "wink_stadsdeel_naam"
 )
 # group by stadsdeel
 vars_sd = c(
@@ -140,8 +130,7 @@ gem_rap[["rap_20"]] <- bind_rows(
       wink_stadsdeel_code = "Amsterdam",
       wink_stadsdeel_naam = "Amsterdam"
     )
-) |>
-  add_column(monitor = 'monitor 2020')
+)
 
 ### data 2022 ---
 
@@ -203,8 +192,7 @@ gem_rap[["rap_22"]] <- bind_rows(
       wink_stadsdeel_code = "Amsterdam",
       wink_stadsdeel_naam = "Amsterdam"
     )
-) |>
-  add_column(monitor = 'monitor 2022')
+)
 
 ### data 2024 ---
 
@@ -265,8 +253,7 @@ gem_rap[["rap_24"]] <- bind_rows(
       wink_stadsdeel_code = "Amsterdam",
       wink_stadsdeel_naam = "Amsterdam"
     )
-) |>
-  add_column(monitor = 'monitor 2024')
+)
 
 ### data 2026 ---
 
@@ -326,8 +313,7 @@ gem_rap[["rap_26"]] <- bind_rows(
       wink_stadsdeel_code = "Amsterdam",
       wink_stadsdeel_naam = "Amsterdam"
     )
-) |>
-  add_column(monitor = 'monitor 2026')
+)
 
 
 # verwijder de lage aantallen
@@ -337,27 +323,23 @@ gem_rap_filter <- gem_rap |>
   map(\(x) filter(x, wink_code != "900")) |>
   map(\(x) filter(x, wink_code != "999")) |>
   map(\(x) filter(x, wink_code != "800")) |>
-  map(\(x) filter(x, wink_stadsdeel_code != "onbekend")) |>
-  map(\(x) filter(x, wink_stadsdeel_code != "online")) |>
   map(\(x) filter(x, !str_detect(wink_naam, "overig"))) |>
-  map_df(\(x) select(x, monitor, name, label, everything()))
+  map(\(x) select(x, name, label, everything()))
 
 openxlsx::write.xlsx(
   gem_rap_filter,
-  "04 reports/03 tabellen/rapportcijfers_20_tm_26.xlsx",
+  "04 reports/03 tabellen/rapportcijfers_22_tm_26.xlsx",
   overwrite = T,
   withFilter = T
 )
 
 ### nette publicatietabel ---
 
-# gemiddelde
-tabel_netjes_dg <- bind_rows(
-  gem_rap_filter |>
-    ungroup() |>
-    filter(productgroep == 'winkelgebied voor dagelijkse boodschappen') |>
+tabel_netjes <- gem_rap_filter |>
+  map(\(x) ungroup(x)) |>
+  map(\(x) {
     select(
-      monitor,
+      x,
       label,
       productgroep,
       wink_code,
@@ -365,400 +347,145 @@ tabel_netjes_dg <- bind_rows(
       wink_stadsdeel_code,
       wink_stadsdeel_naam,
       gem_gewogen
-    ) |>
-    pivot_wider(
-      names_from = label,
-      values_from = gem_gewogen
-    ) |>
-    add_column(item = 'rapportcijfer'),
-
-  gem_rap_filter |>
-    ungroup() |>
-    filter(productgroep == 'winkelgebied voor dagelijkse boodschappen') |>
-    select(
-      monitor,
-      label,
-      productgroep,
-      wink_code,
-      wink_naam,
-      wink_stadsdeel_code,
-      wink_stadsdeel_naam,
-      aantal
-    ) |>
-    pivot_wider(
-      names_from = label,
-      values_from = aantal
-    ) |>
-    add_column(item = 'aantal')
-)
-
-
-tabel_netjes_ndg <- bind_rows(
-  gem_rap_filter |>
-    ungroup() |>
-    filter(productgroep == 'winkelgebied om te winkelen') |>
-    select(
-      monitor,
-      label,
-      productgroep,
-      wink_code,
-      wink_naam,
-      wink_stadsdeel_code,
-      wink_stadsdeel_naam,
-      gem_gewogen
-    ) |>
-    pivot_wider(
-      names_from = label,
-      values_from = gem_gewogen
-    ) |>
-    add_column(item = 'rapportcijfer'),
-
-  gem_rap_filter |>
-    ungroup() |>
-    filter(productgroep == 'winkelgebied om te winkelen') |>
-    select(
-      monitor,
-      label,
-      productgroep,
-      wink_code,
-      wink_naam,
-      wink_stadsdeel_code,
-      wink_stadsdeel_naam,
-      aantal
-    ) |>
-    pivot_wider(
-      names_from = label,
-      values_from = aantal
-    ) |>
-    add_column(item = 'aantal')
-)
-
+    )
+  }) |>
+  map(\(x) pivot_wider(x, names_from = label, values_from = gem_gewogen))
 
 openxlsx::write.xlsx(
-  list(
-    rap_dg = tabel_netjes_dg,
-    rap_ndg = tabel_netjes_ndg
-  ),
-  "04 reports/03 tabellen/rapportcijfers_20_tm_26_netjes.xlsx",
+  tabel_netjes,
+  "04 reports/03 tabellen/rapportcijfers_22_tm_26_netjes.xlsx",
   overwrite = T,
   withFilter = T
 )
 
-#########################
-#        KAARTEN        #
-#########################
-
-# url met winkelgebieden
-wg_url <- 'https://onderzoek.amsterdam.nl/static/datavisualisatie-onderzoek-en-statistiek/geo/winkelgebieden/2024/winkelgebieden-2024-geo.json'
-
-# url met stadsdelen
-sd_url <- 'https://onderzoek.amsterdam.nl/static/datavisualisatie-onderzoek-en-statistiek/geo/amsterdam/2022/stadsdelen-2022-zw-geo.json'
+wg_sd <- openxlsx::read.xlsx("01 references/winkelgebieden_20_22_24_26_def.xlsx")
 
 
-# inlezen geojson van de winkelgebieden en omzetten naar spatial feature
-winkelgebieden_geo <- sf::st_read(wg_url) |>
-  rename(winkelgebied_oiscode = code)
+###########################
+#Gemiddelde Rapportcijfers#
 
-# inlezen geojson van de stadsdelen en omzetten naar spatial feature
-stadsdelen_geo <- sf::st_read(sd_url) |>
-  rename(
-    gbd_sdl_naam = naam,
-    gbd_sdl_code = code
-  )
-
-# Data voor winkelgebiedkaart voor alle jaartallen
-kaart_winkelgeb_rap <- winkelgebieden_geo |>
-  left_join(gem_rap_filter, by = "winkelgebied_oiscode")
-
-#Kaart algemeen winkelgebieden dagelijks en niet dagelijks
-kaart_winkelgeb_rap_alg <- kaart_winkelgeb_rap |>
-  filter(name %in% c('v6', "v21")) |>
-  # data staat niet meer in list maar in df, dus extra filter toevoegen
-  filter(monitor == 'monitor 2026') |>
-  mutate(
-    name = recode(
-      name,
-      "v6" = "totaaloordeel dagelijks",
-      "v21" = "totaaloordeel niet dagelijks"
-    )
-  )
-fig_wg <- ggplot() +
-  geom_sf(
-    data = stadsdelen_geo,
-    color = 'white',
-    fill = "#cfcfcf",
-    linewidth = 0.6
-  ) +
-  geom_sf(
-    data = kaart_winkelgeb_rap_alg,
-    aes(fill = gem_gewogen, geometry = geometry),
-    color = NA,
-    linewidth = 0.7
-  ) +
-  labs(title = NULL, x = NULL, y = NULL) +
-  scale_fill_gradient(name = NULL, low = "#f2dae7", high = "#a00078") +
-  theme_clk(legenda_pos = "right") +
-  guides(
-    fill = guide_colourbar(reverse = FALSE)
-  ) +
-  facet_wrap(~name, ncol = 1)
-
-#ggsave(
-#  ""04 reports/04 figuren/>naam<.svg",
-#  width = 12,
-#  height = 6
-#)
-
-# Data alle jaren voor kaart stadsdelen algemeeen
-kaart_sd_rap <- stadsdelen_geo |>
-  left_join(
-    gem_rap_filter,
-    by = c("gbd_sdl_code" = "wink_stadsdeel_code")
-  )
-
-#Kaart algemeen stadsdelen dagelijks en niet dagelijks
-kaart_sd_rap_alg <- kaart_sd_rap |>
-  filter(name %in% c('v6', "v21")) |>
-  # data staat niet meer in list maar in df, dus extra filter toevoegen
-  filter(monitor == 'monitor 2026') |>
-  mutate(
-    name = recode(
-      name,
-      "v6" = "totaaloordeel dagelijks",
-      "v21" = "totaaloordeel niet dagelijks"
-    )
-  )
-
-fig_sd <- ggplot() +
-  geom_sf(
-    data = stadsdelen_geo,
-    color = 'white',
-    fill = "#cfcfcf",
-    linewidth = 0.6
-  ) +
-  geom_sf(
-    data = kaart_sd_rap_alg,
-    aes(fill = gem_gewogen, geometry = geometry),
-    color = NA,
-    linewidth = 0.7
-  ) +
-  labs(title = NULL, x = NULL, y = NULL) +
-  scale_fill_gradient(name = NULL, low = "#f2dae7", high = "#a00078") +
-  theme_clk(legenda_pos = "right") +
-  guides(
-    fill = guide_colourbar(reverse = TRUE)
-  ) +
-  facet_wrap(~name, ncol = 1)
-
-# #Samenvoegen kaarten sd en wg
-# library(patchwork)
-#
-# fig_patch <- fig_sd/fig_wg
-
-#kaart Veiligheid stadsdelen overdag dagelijks & niet dagelijks
-kaart_sd_rap_veiligoverdag <- kaart_sd_rap |>
-  filter(name %in% c('v7_nw_veiligheid_gv1', "v22_nw_veiligheid_gv1")) |>
-  mutate(
-    name = recode(
-      name,
-      "v7_nw_veiligheid_gv1" = "veiligheid overdag dagelijks",
-      "v22_nw_veiligheid_gv1" = "veiligheid overdag niet dagelijks"
-    )
-  )
-fig_sd_veiligoverdag <- ggplot() +
-  geom_sf(
-    data = stadsdelen_geo,
-    color = 'white',
-    fill = "#cfcfcf",
-    linewidth = 0.6
-  ) +
-  geom_sf(
-    data = kaart_sd_rap_veiligoverdag,
-    aes(fill = gem_gewogen, geometry = geometry),
-    color = NA,
-    linewidth = 0.7
-  ) +
-  labs(title = NULL, x = NULL, y = NULL) +
-  scale_fill_gradient(name = NULL, low = "#f2dae7", high = "#a00078") +
-  theme_clk(legenda_pos = "right") +
-  guides(
-    fill = guide_colourbar(reverse = TRUE)
-  ) +
-  facet_wrap(~name, ncol = 1)
+list_rapportcijfers[["rap_26_dg"]]|>
+  mutate(gem_rap= mean (V7)
 
 
-#kaart veiligheid stadsdelen avond dagelijks & niet dagelijks
-kaart_sd_rap_veiligavond <- kaart_sd_rap |>
-  filter(
-    name %in% c('v7_nw_veiligheid_avond_gv1', "v22_nw_veiligheid_avond_gv1")
-  ) |>
-  mutate(
-    name = recode(
-      name,
-      "v7_nw_veiligheid_avond_gv1" = "veiligheid avond dagelijks",
-      "v22_nw_veiligheid_avond_gv1" = "veiligheid avond niet dagelijks"
-    )
-  )
-fig_sd_veiligavond <- ggplot() +
-  geom_sf(
-    data = stadsdelen_geo,
-    color = 'white',
-    fill = "#cfcfcf",
-    linewidth = 0.6
-  ) +
-  geom_sf(
-    data = kaart_sd_rap_veiligavond,
-    aes(fill = gem_gewogen, geometry = geometry),
-    color = NA,
-    linewidth = 0.7
-  ) +
-  labs(title = NULL, x = NULL, y = NULL) +
-  scale_fill_gradient(name = NULL, low = "#f2dae7", high = "#a00078") +
-  theme_clk(legenda_pos = "right") +
-  guides(
-    fill = guide_colourbar(reverse = TRUE)
-  ) +
-  facet_wrap(~name, ncol = 1)
 
-
-######################
-#   GG TILES         #
-######################
-
-# # figuur met rapportcijfers 2026 dagelijks boodschappen
-gem_rap_filter$rap_26 |>
-  filter(productgroep == 'winkelgebied voor dagelijkse boodschappen') |>
-
-  ggplot(aes(
-    x = label,
-    y = wink_code,
-    fill = gem_gewogen
-  )) +
-  geom_tile(color = "white", lwd = 0.9, linetype = 1) +
-  labs(title = NULL, x = NULL, y = NULL) +
-  scale_fill_gradientn(colors = hcl.colors(20, "RdYlgn")) +
-  theme_os() +
-  coord_fixed(0.6)
-
-######HIER SPECIFICEREN ######
-#Naar kort winkel naam en bvb thema veiligheid
 
 # ###############
 # # categorieën -
 # ###############
 
-# totaal <- c(
-#   "totaaloordeel winkelgebied"
-# )
+ totaal <- c(
+   "totaaloordeel winkelgebied"
+ )
 
-# gemiddelde <- c(
-#   "gemiddeld rapportcijfer"
-# )
+ gemiddelde <- c(
+   "gemiddeld rapportcijfer"
+ )
 
-# sfeer <- c(
-#   "uiterlijk van de winkels",
-#   "aankleding en inrichting",
-#   "sfeer en de gezelligheid"
-# )
+ sfeer <- c(
+   "uiterlijk van de winkels",
+   "aankleding en inrichting",
+   "sfeer en de gezelligheid"
+ )
 
-# aanbod <- c(
-#   "aanbod van daghoreca",
-#   "het algemeen prijsniveau",
-#   "het diverse aanbod van food-winkels",
-#   "het diverse aanbod van non-food-winkels"
-# )
+ aanbod <- c(
+   "aanbod van daghoreca",
+   "het algemeen prijsniveau",
+   "het diverse aanbod van food-winkels",
+   "het diverse aanbod van non-food-winkels"
+ )
 
-# duurzaam_bio <- c(
-#   "het biologische/duurzame aanbod van food-winkels",
-#   "het duurzame aanbod van non-food winkels"
-# )
+ duurzaam_bio <- c(
+   "het biologische/duurzame aanbod van food-winkels",
+   "het duurzame aanbod van non-food winkels"
+ )
 
-# overlast <- c(
-#   "het schoonhouden van de straten",
-#   "overlast door horeca",
-#   "overlast van andere mensen",
-#   "veiligheid winkelomgeving overdag",
-#   "veiligheid winkelomgeving ‘s avonds",
-#   "overlast door vervuiling"
-# )
+ overlast <- c(
+   "het schoonhouden van de straten",
+   "overlast door horeca",
+   "overlast van andere mensen",
+   "veiligheid winkelomgeving overdag",
+   "veiligheid winkelomgeving ‘s avonds",
+   "overlast door vervuiling"
+ )
 
-# bereik <- c(
-#   "parkeermogelijkheden voor auto",
-#   "parkeermogelijkheden voor fiets",
-#   "algemene bereikbaarheid"
-# )
+ bereik <- c(
+   "parkeermogelijkheden voor auto",
+   "parkeermogelijkheden voor fiets",
+   "algemene bereikbaarheid"
+ )
 
-# # samenvoegen -
-# gem_totaal <- bind_rows(gem_rap, gem_rap_ams, gem_rap_sd) |>
+ # samenvoegen -
+ gem_totaal <- bind_rows(gem_rap, gem_rap_ams, gem_rap_sd) |>
 
-#   mutate(
-#     item = str_trim(item, "both")
-#   ) |>
+   mutate(
+     item = str_trim(item, "both")
+   ) |>
 
-#   mutate(
-#     item = case_when(
-#       item ==
-#         "Wat is uw totaaloordeel over dit winkelgebied?" ~ "totaaloordeel winkelgebied",
-#       item ==
-#         "het biologische/duurzame aanbod van food-winkels" ~ "het biologische/duurzame aanbod food",
-#       item ==
-#         "het schoonhouden van de straten/ stoepen/ passage" ~ "schoonhouden van de straten",
-#       item ==
-#         "de sfeer en de gezelligheid van het winkelgebied" ~ "sfeer en de gezelligheid",
-#       item ==
-#         "de aankleding en inrichting van het winkelgebied (faciliteiten, verlichting, bankjes)" ~ "aankleding en inrichting",
-#       item ==
-#         "het uiterlijk van de winkels (denk aan gevels, etalages, inrichting)" ~ "uiterlijk van de winkels",
-#       TRUE ~ item
-#     )
-#   ) |>
+   mutate(
+     item = case_when(
+       item ==
+         "Wat is uw totaaloordeel over dit winkelgebied?" ~ "totaaloordeel winkelgebied",
+       item ==
+         "het biologische/duurzame aanbod van food-winkels" ~ "het biologische/duurzame aanbod food",
+       item ==
+         "het schoonhouden van de straten/ stoepen/ passage" ~ "schoonhouden van de straten",
+       item ==
+         "de sfeer en de gezelligheid van het winkelgebied" ~ "sfeer en de gezelligheid",
+       item ==
+         "de aankleding en inrichting van het winkelgebied (faciliteiten, verlichting, bankjes)" ~ "aankleding en inrichting",
+       item ==
+         "het uiterlijk van de winkels (denk aan gevels, etalages, inrichting)" ~ "uiterlijk van de winkels",
+       TRUE ~ item
+     )
+   ) |>
 
-#   mutate(
-#     thema = case_when(
-#       item %in% sfeer ~ 'sfeer en gezelligheid',
-#       item %in% totaal ~ 'totaal oordeel',
-#       item == "gemiddeld rapportcijfer" ~ 'gemiddelde rapportcijfer',
-#       item %in% duurzaam_bio ~ 'duurz. en biol. producten',
-#       item %in% aanbod ~ 'aanbod producten',
-#       item %in% overlast ~ 'overlast',
-#       item %in% bereik ~ 'bereik'
-#     )
-#   ) |>
+   mutate(
+     thema = case_when(
+       item %in% sfeer ~ 'sfeer en gezelligheid',
+       item %in% totaal ~ 'totaal oordeel',
+       item == "gemiddeld rapportcijfer" ~ 'gemiddelde rapportcijfer',
+       item %in% duurzaam_bio ~ 'duurz. en biol. producten',
+       item %in% aanbod ~ 'aanbod producten',
+       item %in% overlast ~ 'overlast',
+       item %in% bereik ~ 'bereik'
+     )
+   ) |>
 
-#   mutate(
-#     winkelgebied_naam_kort = str_split(
-#       winkelgebied_naam,
-#       ",",
-#       simplify = TRUE
-#     )[, 1]
-#   ) |>
+   mutate(
+     winkelgebied_naam_kort = str_split(
+       winkelgebied_naam,
+       ",",
+       simplify = TRUE
+     )[, 1]
+   ) |>
 
-#   mutate(
-#     winkelgebied_naam_kort = case_when(
-#       winkelgebied_naam_kort ==
-#         'Waddenweg / Meeuwenlaan / gedempt Hamerkanaal' ~ 'Meeuwenlaan e.o.',
-#       winkelgebied_naam_kort ==
-#         'Bezaanjachtplein / Winkelcentrum in de Banne' ~ 'Bezaanjachtplein / In de Banne',
-#       winkelgebied_naam_kort ==
-#         'Zeilstraat / Hoofddorpplein/ Sloterkade' ~ 'Zeilstraat / Hoofddorpplein',
-#       winkelgebied_naam_kort ==
-#         'Ferdinand Bolstraat / Marie Heinekenplein' ~ 'F. Bolstraat / M. Heinekenplein',
-#       TRUE ~ winkelgebied_naam_kort
-#     )
-#   )
+   mutate(
+     winkelgebied_naam_kort = case_when(
+       winkelgebied_naam_kort ==
+         'Waddenweg / Meeuwenlaan / gedempt Hamerkanaal' ~ 'Meeuwenlaan e.o.',
+       winkelgebied_naam_kort ==
+         'Bezaanjachtplein / Winkelcentrum in de Banne' ~ 'Bezaanjachtplein / In de Banne',
+       winkelgebied_naam_kort ==
+         'Zeilstraat / Hoofddorpplein/ Sloterkade' ~ 'Zeilstraat / Hoofddorpplein',
+       winkelgebied_naam_kort ==
+         'Ferdinand Bolstraat / Marie Heinekenplein' ~ 'F. Bolstraat / M. Heinekenplein',
+       TRUE ~ winkelgebied_naam_kort
+     )
+   )
 
-# gem_thema <- gem_totaal |>
-#   group_by(
-#     winkelgebied_code,
-#     winkelgebied_naam,
-#     afzet_stadsdeel_code,
-#     productgroep,
-#     aantal,
-#     thema,
-#     winkelgebied_naam_kort
-#   ) |>
-#   summarise(gemiddelde = mean(gemiddelde, na.rm = T)) |>
-#   filter(!is.na(gemiddelde))
+ gem_thema <- gem_totaal |>
+   group_by(
+     winkelgebied_code,
+     winkelgebied_naam,
+     afzet_stadsdeel_code,
+     productgroep,
+     aantal,
+     thema,
+     winkelgebied_naam_kort
+   ) |>
+   summarise(gemiddelde = mean(gemiddelde, na.rm = T)) |>
+   filter(!is.na(gemiddelde))
 
 # ###############
 # ### KAARTEN ---
@@ -767,40 +494,40 @@ gem_rap_filter$rap_26 |>
 # # inlezen theme en ggplot
 # source("03 R scripts/scripts 01 weging en respons/script 00 setup.R")
 
-# wg_sd_kl <- wg_sd |>
-#   select(winkelgebied_code, winkelgebied_oisnaam, winkelgebied_oiscode) |>
-#   filter(!is.na(winkelgebied_code))
+wg_sd_kl <- wg_sd |>
+   select(w1, winkelgebied_oisnaam, winkelgebied_oiscode) |>
+   filter(!is.na(w1))
 
-# tabel_figuur <- gem_totaal |>
-#   filter(aantal > 19) |>
+ tabel_figuur <- gem_totaal |>
+   filter(aantal > 19) |>
 
-#   pivot_wider(
-#     names_from = item,
-#     values_from = gemiddelde,
-#     values_fill = 0,
-#     id_cols = -thema
-#   ) |>
-#   filter(
-#     winkelgebied_naam != 'geen winkelstraat/gebied',
-#     winkelgebied_naam != 'overig'
-#   ) |>
-#   left_join(wg_sd_kl, by = "winkelgebied_code") |>
-#   relocate(
-#     winkelgebied_code,
-#     winkelgebied_naam,
-#     winkelgebied_oiscode,
-#     winkelgebied_oisnaam
-#   )
+   pivot_wider(
+     names_from = item,
+     values_from = gemiddelde,
+     values_fill = 0,
+     id_cols = -thema
+   ) |>
+   filter(
+     w1_label != 'geen winkelstraat/gebied',
+     w1_label != 'overig'
+   ) |>
+   left_join(wg_sd_kl, by = "w1") |>
+   relocate(
+     w1,
+     w1_label,
+     winkelgebied_oiscode,
+     winkelgebied_oisnaam
+   )
 
-# write.xlsx(
-#   tabel_figuur,
-#   "04 output tabellen/tab_mondet24_rapportcijfers24.xlsx",
-#   withFilter = T,
-#   overwrite = T
-# )
+ write.xlsx(
+   tabel_figuur,
+   "04 output tabellen/tab_mondet24_rapportcijfers24.xlsx",
+   withFilter = T,
+   overwrite = T
+ )
 
-# tabel_figuur <- gem_totaal |>
-#   filter(aantal > 19) |>
+ tabel_figuur <- gem_totaal |>
+   filter(aantal > 19) |>
 
 #   filter(
 #     winkelgebied_naam != 'geen winkelstraat/gebied',

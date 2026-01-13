@@ -26,51 +26,28 @@ data_totaal <- read_rds("01 references/data_totaal_20_22_24_26.rds")
 
 data_markt <- list()
 
+jaren <- c("monitor 2020", "monitor 2022", "monitor 2024", "monitor 2026")
+
+my_cleaning <- function(x) {
+  x |>
+    clean_names() |>
+    haven::as_factor() |>
+    select(
+      monitor,
+      v2,
+      contains("v3"),
+      v13:v15_anders,
+      v16,
+      starts_with("gebied_"),
+      contains("_klas"),
+      contains("weeg")
+    )
+}
+
 # selectie van data met v13 tm v15 warenmarkten
-data_markt$data_20 <- data_totaal$data_20_weeg |>
-  clean_names() |>
-  haven::as_factor() |>
-  select(
-    v2,
-    contains("v3"),
-    v13:v15_anders,
-    v16,
-    starts_with("gebied_"),
-    contains("_klas"),
-    weegfactor_ams,
-    weeg_ams_ink
-  )
-
-data_markt$data_22 <- data_totaal$data_22_weeg |>
-  clean_names() |>
-  haven::as_factor() |>
-  select(
-    v2,
-    contains("v3"),
-    v13:v15_anders,
-    v16,
-    starts_with("gebied_"),
-    contains("_klas"),
-    weegfactor_ams,
-    weeg_ams_ink
-  ) |>
-  mutate(v13 = case_when(is.na(v13) ~ "zelden tot nooit", TRUE ~ v13))
-
-
-data_markt$data_24 <- data_totaal$data_24_weeg |>
-  clean_names() |>
-  haven::as_factor() |>
-  select(
-    v2,
-    contains("v3"),
-    v13:v15_anders,
-    v16,
-    starts_with("gebied_"),
-    contains("_klas"),
-    weegfactor_ams,
-    weeg_ams_ink
-  ) |>
-  mutate(v13 = case_when(v13 == '1 keer week' ~ "1 keer per week", TRUE ~ v13))
+data_markt <- data_totaal |>
+  map2(jaren, \(x, y) add_column(x, monitor = y)) |>
+  map(\(x) my_cleaning(x))
 
 # inlezen opgeschoonde namen v15
 markt_uniek <- openxlsx::read.xlsx("01 references/markt_uniek.xlsx")
@@ -84,21 +61,16 @@ my_markt_function <- function(x) {
     mutate(
       v13 = case_when(
         v13 == '1 keer week' ~ '1 keer per week',
+        v13 == 'weet niet, geen antwoord' ~ 'onbekend',
+        is.na(v13) ~ "onbekend",
         TRUE ~ v13
       )
     ) |>
 
-    # wel versus geen marktbezoek
     mutate(
       v15_schoon = case_when(
-        v13 %in%
-          c(
-            'weet niet, geen antwoord',
-            'zelden tot nooit'
-          ) ~ 'bezoekt geen markt',
-        is.na(v15) &
-          (v13 != 'weet niet, geen antwoord' |
-            v13 != 'zelden tot nooit') ~ 'bezoekt markt, markt onbekend',
+        v13 == 'zelden tot nooit' ~ 'bezoekt geen markt',
+        v13 != 'zelden tot nooit' & is.na(v15) ~ 'onbekend',
         TRUE ~ v15_schoon
       )
     ) |>
@@ -121,13 +93,8 @@ my_markt_function <- function(x) {
     )
 }
 
-data_markt_def <- list()
-
-
-jaren <- c("monitor 2020", "monitor 2022", "monitor 2024")
-
 data_markt_def <- data_markt |>
   map(\(x) my_markt_function(x)) |>
-  map2(jaren, \(x, y) add_column(x, monitor = y))
+  map(\(x) select(x, monitor, v2, v13, v15, v15_schoon, v16, everything()))
 
-write_rds(data_markt_def, file = "01 references/data_markt_def.RDS")
+write_rds(data_markt_def, file = "01 references/data_markt_def.rds")

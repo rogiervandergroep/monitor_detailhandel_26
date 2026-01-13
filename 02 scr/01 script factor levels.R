@@ -36,7 +36,7 @@ doelgericht <- c(
 
 ### volgorde eindtabellenm
 
-monitor_levels = c(
+lev_monitor = c(
   "monitor 2020",
   "monitor 2022",
   "monitor 2024",
@@ -173,6 +173,56 @@ productgroep_levels <- productgroepen
 
 ### rapportcijfers voor beoordeing winkelgebeiden
 
+lev_v13 <- c(
+  "een aantal keer per week",
+  "1 keer per week",
+  "1 keer per twee weken",
+  "1 keer per maand",
+  "minder dan 1 keer per maand",
+  "zelden tot nooit",
+  "onbekend"
+)
+
+lev_sd <- c(
+  "Centrum",
+  "Westpoort",
+  "West",
+  "Nieuw-West",
+  "Zuid",
+  "Oost",
+  "Noord",
+  "Weesp",
+  "Zuidoost",
+  "Amsterdam"
+)
+
+# naar inkomen
+lev_ink = c(
+  "inkomen laag",
+  "inkomen midden",
+  "inkomen hoog",
+  'inkomen onbekend'
+)
+
+lev_leefkl <- c(
+  "34 jaar of jonger",
+  "35 jaar tot en met 55 jaar",
+  "56 jaar of ouder",
+  "onbekend"
+)
+
+lev_huish <- c(
+  "een persoon",
+  "paar zonder kinderen",
+  "een ouder",
+  "paar met kinderen",
+  "overig, onbekend"
+)
+
+
+lev_opl = c("basisopgeleid", "mbo-opgeleid", "hbo/wo-opgeleid")
+
+
 rap <- list()
 
 rap[["20_22_v7"]] <- c(
@@ -209,6 +259,24 @@ rap[["20_22_v22"]] <- c(
   "v22_aanbod_daghoreca_gv1",
   "v22_bereikbaar_gv1"
 )
+
+
+rap[["20_22_v7_v22_label"]] <- c(
+  "totaaloordeel winkelgebied?",
+  "het uiterlijk van de winkels",
+  "de aankleding en inrichting van het centrum-winkelgebied",
+  "de sfeer en de gezelligheid van winkels",
+  "service en bediening",
+  "het diverse aanbod van food-winkels",
+  "het diverse aanbod van non-food-winkels",
+  "het algemeen prijsniveau",
+  "veiligheid winkelomgeving",
+  "parkeermogelijkheden voor fiets",
+  "parkeermogelijkheden voor auto",
+  "aanbod van daghoreca",
+  "algemene bereikbaarheid"
+)
+
 
 # rapportcijfers 2024 en 2026
 rap[["24_26_v7"]] <- c(
@@ -254,5 +322,28 @@ rap[["24_26_v22"]] <- c(
   "v22_nw_aanbod_daghoreca_gv1",
   "v22_nw_bereikbaar_gv1"
 )
+
+rap[["24_26_v7_v22_label"]] <- c(
+  "totaaloordeel winkelgebied",
+  "het uiterlijk van de winkels",
+  "de aankleding en inrichting van het winkelgebied",
+  "de sfeer en de gezelligheid van het winkelgebied",
+  "het diverse aanbod van food-winkels",
+  "het biologische/duurzame aanbod van food-winkels",
+  "het diverse aanbod van non-food-winkels",
+  "het duurzame aanbod van non-food winkels",
+  "het algemeen prijsniveau",
+  "veiligheid winkelomgeving overdag",
+  "veiligheid winkelomgeving 's avonds",
+  "het schoonhouden van de straten/ stoepen/ passage",
+  "overlast van andere mensen",
+  "overlast door vervuiling",
+  "overlast door horeca",
+  "parkeermogelijkheden voor fiets",
+  "parkeermogelijkheden voor auto",
+  "aanbod van daghoreca",
+  "algemene bereikbaarheid"
+)
+
 
 readr::write_rds(rap, "01 references/vragen_rapportcijfers.rds")

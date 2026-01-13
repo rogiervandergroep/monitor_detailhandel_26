@@ -1,30 +1,22 @@
-source("03 R scripts/scripts 01 weging en respons/script 00 setup.R")
+library(tidyverse)
 
-achtergrondvar <- c(
-  "respdef",
-  "opleiding_klas",
-  "inkomen_klas",
-  "huishouden_klas",
-  "geslacht",
-  "leeftijd_klas",
-  "gbd_brt_code",
-  "gbd_brt_naam",
-  "gbd_wijk_code",
-  "gbd_wijk_naam",
-  "gbd_ggw_code",
-  "gbd_ggw_naam",
-  "gbd_sdl_code",
-  "gbd_sdl_naam"
-)
+data_markt_def <- read_rds("01 references/data_markt_def.rds")
 
+source("02 scr/03 script ggplot functies.R")
 
-kosten <- data_markt_def |>
-  map(\(x) group_by(x, v15_schoon)) |>
-  map(\(x) summarise(x, aantal = n(), uitgaven = mean(v16, na.rm = T))) |>
-  map2(jaren, \(x, y) add_column(x, monitor = y)) |>
-  bind_rows() |>
+# kosten per markt
+kosten_markt <- data_markt_def |>
+  map(\(x) group_by(x, monitor, v15_schoon)) |>
+  map_df(\(x) summarise(x, aantal = n(), uitgaven = mean(v16, na.rm = T))) |>
   filter(
-    aantal > 10,
+    aantal > 9,
+    v15_schoon != 'Bos en Lommerwegmarkt',
+    v15_schoon != 'Minervamarkt',
+    v15_schoon != 'onbekend',
+    v15_schoon != 'Zuidasmarkt',
+    v15_schoon != 'Puremarkt',
+    v15_schoon != 'Diemen',
+    v15_schoon != 'Amstelveen',
     v15_schoon != 'bezoekt geen markt',
     v15_schoon != 'MRA',
     v15_schoon != 'anders',
@@ -32,33 +24,62 @@ kosten <- data_markt_def |>
   )
 
 
-kosten |>
-  filter(monitor == 'monitor 2024') |>
+# kosten totaal
+kosten_ams <- data_markt_def |>
+  map(\(x) group_by(x, monitor)) |>
+  map_df(\(x) summarise(x, aantal = n(), uitgaven = mean(v16, na.rm = T)))
 
+fig_kosten_ams <- kosten_ams |>
   ggplot(aes(
-    y = fct_reorder(v15_schoon, uitgaven),
+    y = fct_rev(monitor),
     x = uitgaven
   )) +
-
   geom_col(fill = blauw_pal[2]) +
   geom_text(
     aes(
       label = glue::glue("€ {as.character(round(uitgaven))},-")
     ),
-    position = position_stack(vjust = 1),
+    hjust = 1.5,
     family = font,
     color = 'white',
     lineheight = -0.8
   ) +
-
   labs(title = NULL, x = NULL, y = NULL) +
   theme_os2() +
   guides(fill = guide_legend(reverse = T))
-ggsave("04 reports/04 figuren/fig12_kosten_markt.png", width = 7, height = 5)
+ggsave(
+  "04 reports/04 figuren/fig12_kosten_markt_ams.svg",
+  width = 6,
+  height = 4
+)
 
+
+kosten_markt |>
+  ggplot(aes(
+    y = fct_reorder(v15_schoon, uitgaven),
+    x = uitgaven
+  )) +
+  geom_col(fill = blauw_pal[2]) +
+  geom_text(
+    aes(
+      label = glue::glue("€ {as.character(round(uitgaven))},-")
+    ),
+    position = position_stack(vjust = 0.5),
+    family = font,
+    color = 'white',
+    lineheight = -0.8
+  ) +
+  labs(title = NULL, x = NULL, y = NULL) +
+  theme_os2() +
+  guides(fill = guide_legend(reverse = T)) +
+  facet_wrap(~monitor, nrow = 1)
+ggsave("04 reports/04 figuren/fig12_kosten_markt.svg", width = 12, height = 6)
+
+
+## oud niet gebruiken ###
 
 # data gemaakt in 'script 20 01 bezoek markten.R' inlezen
-data_markt_def <- read_rds("03 tussentijds/data_markt_def.RDS") |>
+data_markt_def <- read_rds("01 references/data_markt_def.RDS") |>
   map(\(x) filter(x, !is.na(v2), v2 > 0)) |>
   map(\(x) select(x, v2, starts_with("v3"), all_of(achtergrondvar))) |>
   map(\(x) mutate(x, across(starts_with("v3"), ~ replace_na(., 0)))) |>

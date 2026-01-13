@@ -56,7 +56,8 @@ blauw_pal <- c(
   "#a1a7d2",
   "#b8bcdd",
   "#d0d2e8",
-  "#e7e8f4"
+  "#e7e8f4",
+  "#e6e6e6"
 )
 
 
@@ -150,6 +151,26 @@ theme_map <- function(legend_position = c(0, 0)) {
     )
 }
 
+theme_clk <- function(legenda_pos) {
+  theme_bw() +
+    theme(
+      plot.subtitle = element_text(family = font, size = 12),
+      legend.text = element_text(family = font, size = 12),
+      plot.title = element_text(family = font, lineheight = 1.2, size = 14),
+      axis.line = element_blank(),
+      axis.text = element_blank(),
+      axis.ticks = element_blank(),
+      axis.title = element_blank(),
+      panel.background = element_blank(),
+      strip.background = element_blank(),
+      strip.text = element_text(family = font, lineheight = 1.2, size = 12),
+      panel.grid = element_blank(),
+      panel.spacing = unit(0, "lines"),
+      panel.border = element_rect(fill = "transparent", color = NA),
+      plot.background = element_blank(),
+      legend.position = legenda_pos,
+    )
+}
 
 my_plot <- function(x, y_var, afzet_var) {
   x |>

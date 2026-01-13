@@ -1,16 +1,27 @@
+setwd("C:/Users/knijff008/OneDrive - Gemeente Amsterdam/Data - afdeling Onderzoek en Statistiek - OS 26 Monitor Detailhandel GIT")
+install.packages("readr")
+install.packages("here")
+install.packages("tidyverse")
+install.packages("haven")
+install.packages("janitor")
+install.packages("openxlsx")
+install.packages("dplyr")
+library(readr)
 library(tidyverse)
 library(haven)
 library(janitor)
 library(openxlsx)
-
+library(here)
+library(dplyr)
 
 ### --- inlezen postcodes ---
-
-# NB: postocdes zijn gedownload op 25 10 2025 van azure databricks
+# NB: postcodes zijn gedownload op 25 10 2025 van azure databricks
 data_pc6 <- read_csv(
   "01 references/postcode6 2025.csv"
 ) |>
-  mutate(gebied_wijk_code = str_replace_na(gebied_wijk_code, "NA"))
+  mutate(
+    gebied_wijk_code = str_replace_na(gebied_wijk_code, "NA")
+  )
 ### ---
 
 # omdat sommige 4-cijferige postcodes in meerdere wijken vallen is gekozen voor de meest voorkomende wijk
@@ -63,7 +74,7 @@ gem_ink_ams <- tibble(
 
 
 ###############################################
-### inlezen datasets 2020, 2022, 2024, 2026 ---
+### inlezen datasets 2020, 2022, 2024, 2026 ###
 ###############################################
 
 # dataset 2020

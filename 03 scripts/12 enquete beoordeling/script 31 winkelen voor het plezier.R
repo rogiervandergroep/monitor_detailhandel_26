@@ -1,4 +1,7 @@
 # lees libraries in met setup
+
+#### oud moet herschreven worden ---
+
 source("03 R scripts/scripts 01 weging en respons/script 00 setup.R")
 
 load(file = "03 tussentijds/data_24_DEF.Rdata")
