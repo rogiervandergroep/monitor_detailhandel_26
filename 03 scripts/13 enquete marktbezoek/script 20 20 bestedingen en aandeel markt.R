@@ -4,6 +4,22 @@ data_markt_def <- read_rds("01 references/data_markt_def.rds")
 
 source("02 scr/03 script ggplot functies.R")
 
+
+achtergrondvar <- c(
+  "opleiding_klas",
+  "inkomen_klas",
+  "huishouden_klas",
+  "leeftijd_klas",
+  "gebied_wijk_code",
+  "gebied_wijk_naam",
+  "gebied_ggw_code",
+  "gebied_ggw_naam",
+  "gebied_stadsdeel_code",
+  "gebied_stadsdeel_naam"
+)
+
+
+
 # kosten per markt
 kosten_markt <- data_markt_def |>
   map(\(x) group_by(x, monitor, v15_schoon)) |>
@@ -28,6 +44,21 @@ kosten_markt <- data_markt_def |>
 kosten_ams <- data_markt_def |>
   map(\(x) group_by(x, monitor)) |>
   map_df(\(x) summarise(x, aantal = n(), uitgaven = mean(v16, na.rm = T)))
+
+
+kosten_totaal <- bind_rows(
+
+  kosten_ams|>
+    add_column(
+      markt =  "totaal"),  
+
+  kosten_markt|>
+    rename(
+      markt =  v15_schoon)
+    )
+
+write_rds(kosten_totaal,"01 references/tabellen_markt_prijs.rds")
+
 
 fig_kosten_ams <- kosten_ams |>
   ggplot(aes(

@@ -31,20 +31,15 @@ wild_pal <- c(
 
 discreet9 <- c(
   "#e6e6e6",
-  "#FFD4E2",
-  "#EC0000",
-  "#FFC88E",
-  "#d48fb9",
-  "#F6F6D4",
-  "#BED200",
-  "#D6ECD6",
-  "#53B361",
-  "#949CCC",
   "#004699",
-  "#ff9100",
-  "#ffe600",
   "#009dec",
-  "#a2bad3"
+  "#6cbd74",
+  "#bed200",
+  "#ffe600",
+  "#fdb0cb",
+  "#d48fb9",
+  "#ff9100",
+  "#ec0000"
 )
 
 blauw_pal <- c(
@@ -60,72 +55,10 @@ blauw_pal <- c(
   "#e6e6e6"
 )
 
-
 grDevices::windowsFonts(
   "Amsterdam Sans" = grDevices::windowsFont("Amsterdam Sans")
 )
 font <- "Amsterdam Sans"
-
-hcl <- farver::decode_colour(blauw_pal, "rgb", "hcl")
-
-label_col <- ifelse(hcl[, "l"] > 50, "black", "white")
-
-theme_os2 <- function(orientation = "horizontal", legend_position = "right") {
-  theme <- theme_bw() +
-    theme(
-      text = element_text(family = font, size = 12),
-      axis.text = element_text(family = font, size = 12),
-      plot.caption = element_text(family = font, size = 12),
-      axis.title = element_text(family = font, hjust = 1, size = 12),
-      plot.subtitle = element_text(family = font, size = 12),
-      legend.text = element_text(family = font, size = 12),
-      plot.title = element_text(
-        family = font,
-        lineheight = 1.2,
-        size = 12
-      ),
-      panel.grid.minor = element_blank(),
-      strip.background = element_blank(),
-      legend.title = element_blank(),
-      axis.ticks.y = element_blank(),
-      axis.ticks.x = element_blank(),
-      legend.position = legend_position,
-      panel.border = element_rect(fill = "transparent", color = NA),
-      strip.text = element_text(
-        color = "black",
-        family = font,
-        face = "bold",
-        size = 12
-      )
-    )
-
-  if (orientation %in% c("vertical", "v")) {
-    theme <- theme + theme(panel.grid.major.x = element_blank())
-  } else if (orientation %in% c("horizontal", "h")) {
-    theme <- theme + theme(panel.grid.major.y = element_blank())
-  }
-}
-
-theme_os3 <- function(legenda_pos) {
-  theme_bw() +
-    theme(
-      plot.subtitle = element_text(family = font, size = 12),
-      legend.text = element_text(family = font, size = 12),
-      plot.title = element_text(family = font, lineheight = 1.2, size = 14),
-      axis.line = element_blank(),
-      axis.text = element_blank(),
-      axis.ticks = element_blank(),
-      axis.title = element_blank(),
-      panel.background = element_blank(),
-      strip.background = element_blank(),
-      strip.text = element_text(family = font, lineheight = 1.2, size = 12),
-      panel.grid = element_blank(),
-      panel.spacing = unit(0, "lines"),
-      panel.border = element_rect(fill = "transparent", color = NA),
-      plot.background = element_blank(),
-      legend.position = legenda_pos,
-    )
-}
 
 
 theme_map <- function(legend_position = c(0, 0)) {
@@ -151,49 +84,30 @@ theme_map <- function(legend_position = c(0, 0)) {
     )
 }
 
-theme_clk <- function(legenda_pos) {
-  theme_bw() +
-    theme(
-      plot.subtitle = element_text(family = font, size = 12),
-      legend.text = element_text(family = font, size = 12),
-      plot.title = element_text(family = font, lineheight = 1.2, size = 14),
-      axis.line = element_blank(),
-      axis.text = element_blank(),
-      axis.ticks = element_blank(),
-      axis.title = element_blank(),
-      panel.background = element_blank(),
-      strip.background = element_blank(),
-      strip.text = element_text(family = font, lineheight = 1.2, size = 12),
-      panel.grid = element_blank(),
-      panel.spacing = unit(0, "lines"),
-      panel.border = element_rect(fill = "transparent", color = NA),
-      plot.background = element_blank(),
-      legend.position = legenda_pos,
-    )
-}
 
-my_plot <- function(x, y_var, afzet_var) {
+my_plot <- function(x, x_var, y_var, fill_var, color_var, guide_nr = 1) {
+  hcl <- farver::decode_colour(color_var, "rgb", "hcl")
+
+  label_col <- ifelse(hcl[, "l"] < 50, "black", "white")
+
   x |>
     ggplot(aes(
+      x = {{ x_var }},
       y = {{ y_var }},
-      group = fct_rev({{ afzet_var }}),
-      x = aandeel_gew_omz * 100,
+      group = fct_rev({{ fill_var }}),
+      fill = fct_rev({{ fill_var }})
     )) +
-
-    geom_col(
-      aes(fill = {{ afzet_var }})
-    ) +
-
+    geom_col() +
     geom_text(
       aes(
         label = if_else(
-          round(aandeel_gew_omz * 100) > 4,
-          round(aandeel_gew_omz * 100),
+          round({{ x_var }} * 100) > 4,
+          round({{ x_var }} * 100),
           NA
         ),
-        color = {{ afzet_var }}
+        color = {{ fill_var }}
       ),
-
+      size = 4.5,
       position = position_stack(vjust = 0.5),
       family = font,
       lineheight = .8
@@ -205,38 +119,54 @@ my_plot <- function(x, y_var, afzet_var) {
       y = NULL
     ) +
 
-    theme_os2(legend_position = "bottom") +
+    theme_os(legend_position = "bottom") +
+    theme(text = element_text(size = 16)) +
 
     scale_fill_manual(
       name = NULL,
-      values = blauw_pal[c(2, 3, 5, 6, 7, 8)]
+      values = color_var
     ) +
 
     scale_color_manual(
       name = NULL,
-      values = label_col[c(2, 3, 5, 6, 7, 8)]
+      values = label_col
     ) +
-
+    scale_x_continuous(labels = scales::label_percent(suffix = "%")) +
     guides(
       fill = guide_legend(
-        nrow = 1,
-        reverse = F
+        nrow = guide_nr,
+        reverse = T
       ),
       colour = "none"
     )
 }
 
-# scale_y_continuous(labels = scales::label_comma(big.mark = ".", decimal.mark = ","))+
-# scale_x_continuous(limits = c(2013, 2025), breaks = c(2014, 2016, 2018, 2020, 2022, 2024))+
-# geom_text(aes(
-#        label = scales::label_percent(accuracy = 1)(value)
-# ),
-#   family = font,
-#   position = position_stack(vjust = 0.5),
-#   lineheight = .8
-# ) +
-# labs(y = NULL, x = NULL) +
-# theme_os(orientation = "horizontal", legend_position = 'bottom') +
-# scale_fill_manual(name = NULL, values = blauw_pal[c(1, 2, 4, 6, 8)]) +
-# scale_color_manual(name = NULL, values = label_col[c(1, 2, 4, 6, 8)]) +
-# scale_x_continuous(labels = scales::label_percent(suffix = "%"))+
+
+my_plot_een <- function(x, x_var, y_var, treshhold = 4) {
+  x |>
+    ggplot(aes(
+      x = {{ x_var }},
+      y = {{ y_var }}
+    )) +
+    geom_col(fill = "#004699") +
+    geom_text(
+      aes(
+        label = if_else(
+          {{ x_var }} > treshhold,
+          round({{ x_var }} * 100),
+          NA
+        )
+      ),
+      size = 4.5,
+      hjust = 1.3,
+      color = "#ffffffff",
+      position = position_dodge(width = 0.9),
+      family = font,
+      lineheight = .8
+    ) +
+
+    labs(title = NULL, x = NULL, y = NULL) +
+    guides(color = 'none') +
+    theme_os(legend_position = "bottom") +
+    theme(text = element_text(size = 16))
+}

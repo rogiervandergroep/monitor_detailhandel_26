@@ -60,11 +60,10 @@ nd_24_26 <- c(
 )
 
 
-## selectie 2020
 data_dg_ndg <- list(
+  ## selectie 2020
   dg_ndg_20 = data_totaal$data_20_weeg |>
-    select(w1, all_of(nd_20), gebied_ggw_code:weeg_geb_ink) |>
-    filter(),
+    select(w1, all_of(nd_20), gebied_ggw_code:weeg_geb_ink),
 
   ## selectie 2022
   dg_ndg_22 = data_totaal$data_22_weeg |>
@@ -297,6 +296,23 @@ tabel_dg_ndg_26 <- bind_rows(
   ) |>
   rename(omzetcijfers = omz_2024)
 
+
+rechte_tellingen_totaal <- list(
+  kkb_20 = tabel_dg_ndg_20,
+  kkb_22 = tabel_dg_ndg_22,
+  kkb_24 = tabel_dg_ndg_24,
+  kkb_26 = tabel_dg_ndg_26
+)
+
+write_rds(
+  rechte_tellingen_totaal,
+  "01 references/kkb_rechte_tellingen_totaal.rds"
+)
+openxlsx::write.xlsx(
+  rechte_tellingen_totaal,
+  "01 references/kkb_rechte_tellingen_totaal.xlsx"
+)
+## deze dataset wordt gebruikt om de herkomst te berekenen van bezoekers in centrumwinkelgebieden
 
 ### rechte tellingen per gebied of stadsdeel ---
 my_summary_gebied <- function(x, group_var) {

@@ -1,3 +1,7 @@
+# recreatief: mode, huishoudelijk, sport en spel media en hobby
+
+# doelgericht: elektronica, doe het zelf woning tuinartikelen
+
 my_group_by <- function(x) {
   x |>
     mutate(
@@ -15,6 +19,17 @@ my_group_by <- function(x) {
             '38-Detailh Overig'
           ) ~
           'detailhandel niet-dagelijks'
+      )
+    ) |>
+    mutate(
+      rec_doel = case_when(
+        groep == '00-Leegstand' ~ 'leegstand',
+        groep == '11-Dagelijks' ~ 'detailhandel dagelijks',
+        groep %in% c('59-Leisure', "58-Cultuur & Ontspanning", '59-Horeca') ~
+          'horeca en vrije tijd',
+        groep == '65-Diensten' ~ 'diensten',
+        groep %in% c('22-Mode & Luxe', '35-Vrije Tijd') ~ 'recreatief',
+        groep %in% c('37-In/Om Huis', '38-Detailh Overig') ~ 'doelgericht'
       )
     )
 }
@@ -44,6 +59,26 @@ my_col_figure <- function(x, aan_per, kleurenschema = blauw_pal) {
     suffix = '%'
   )
 
+  threshold_vest <- x |>
+    ungroup() |>
+    filter(
+      name %in% c('aantal vestigingen', 'vestigingen (%)'),
+      type == aan_per
+    ) |>
+    slice_max(value, n = 1, with_ties = FALSE) |>
+    mutate(threshold = 0.15 * value) |>
+    pull()
+
+  threshold_opp <- x |>
+    ungroup() |>
+    filter(
+      name %in% c('winkelvloeroppervlakte (m2)', 'winkelvloeroppervlakte (%)'),
+      type == aan_per
+    ) |>
+    slice_max(value, n = 1, with_ties = FALSE) |>
+    mutate(threshold = 0.20 * value) |>
+    pull()
+
   lab_aantal = scales::label_comma(
     big.mark = ".",
     decimal.mark = ","
@@ -51,6 +86,7 @@ my_col_figure <- function(x, aan_per, kleurenschema = blauw_pal) {
 
   x |>
     filter(type == aan_per) |>
+    mutate(gbd_sdl_naam = factor(gbd_sdl_naam, levels = lev_sd)) |>
     ggplot(aes(
       x = value,
       y = fct_relevel(fct_rev(gbd_sdl_naam), "Amsterdam"),
@@ -65,16 +101,47 @@ my_col_figure <- function(x, aan_per, kleurenschema = blauw_pal) {
     geom_col(position = "dodge") +
     geom_text(
       aes(
-        color = fct_rev(peildatum)
+        color = case_when(
+          name %in%
+            c('aantal vestigingen', 'vestigingen (%)') &
+            value > threshold_vest ~ 'inside',
+          name %in%
+            c('aantal vestigingen', 'vestigingen (%)') &
+            value <= threshold_vest ~ 'outside',
+
+          name %in%
+            c('winkelvloeroppervlakte (m2)', 'winkelvloeroppervlakte (%)') &
+            value > threshold_opp ~ 'inside',
+          name %in%
+            c('winkelvloeroppervlakte (m2)', 'winkelvloeroppervlakte (%)') &
+            value <= threshold_opp ~ 'outside'
+        ),
+        hjust = case_when(
+          name %in%
+            c('aantal vestigingen', 'vestigingen (%)') &
+            value > threshold_vest ~ 1.3,
+          name %in%
+            c('aantal vestigingen', 'vestigingen (%)') &
+            value <= threshold_vest ~ -0.3,
+
+          name %in%
+            c('winkelvloeroppervlakte (m2)', 'winkelvloeroppervlakte (%)') &
+            value > threshold_opp ~ 1.3,
+          name %in%
+            c('winkelvloeroppervlakte (m2)', 'winkelvloeroppervlakte (%)') &
+            value <= threshold_opp ~ -0.3
+        )
       ),
       family = font,
       position = position_dodge(width = 0.9),
-      hjust = 1.2
     ) +
     labs(y = NULL, x = NULL) +
     theme_os(orientation = "horizontal") +
-    scale_fill_manual(name = NULL, values = blauw_pal[c(6, 1)]) +
-    scale_color_manual(name = NULL, values = label_col[c(1, 6)]) +
+    scale_fill_manual(name = NULL, values = blauw_pal[c(6, 3, 1)]) +
+    scale_color_manual(
+      name = NULL,
+      values = c(inside = "white", outside = "black"),
+    ) +
     scale_x_continuous(
       labels = if (aan_per == 'aandeel') {
         lab_percent

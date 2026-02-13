@@ -25,25 +25,29 @@ pub_tabel_geb_geb_centrum <- read_rds(
 pub_tabel_ams_sd_tot$ams_hoofd |>
   mutate(monitor = factor(monitor, levels = lev_monitor)) |>
   my_plot(
+    color_var = blauw_pal[c(9, 5, 3, 1)],
+    x_var = aandeel_gew_omz,
     y_var = fct_rev(monitor),
-    afzet_var = eigen_gebied
+    fill_var = eigen_gebied
   ) +
   facet_wrap(~productgroep)
 
-ggsave("04 reports/04 figuren/fig_1_binding_totaal.svg", width = 12, height = 4)
+ggsave("04 reports/04 figuren/fig_1_binding_totaal.svg", width = 12, height = 5)
 
 pub_tabel_ams_sd_centrum$ams_hoofd |>
   mutate(monitor = factor(monitor, levels = lev_monitor)) |>
   my_plot(
+    color_var = blauw_pal[c(9, 7, 5, 3, 1)],
+    x_var = aandeel_gew_omz,
     y_var = fct_rev(monitor),
-    afzet_var = eigen_gebied_centrum
+    fill_var = eigen_gebied_centrum
   ) +
   facet_wrap(~productgroep)
 
 ggsave(
   "04 reports/04 figuren/fig_1_binding_totaal_centrum.svg",
   width = 12,
-  height = 4
+  height = 5
 )
 
 
@@ -51,30 +55,34 @@ ggsave(
 pub_tabel_ams_sd_tot$ams_sub |>
   mutate(monitor = factor(monitor, levels = lev_monitor)) |>
   my_plot(
+    color_var = blauw_pal[c(9, 5, 3, 1)],
+    x_var = aandeel_gew_omz,
     y_var = fct_rev(monitor),
-    afzet_var = eigen_gebied
+    fill_var = eigen_gebied
   ) +
   facet_wrap(~productgroep)
 
 ggsave(
   "04 reports/04 figuren/fig_1_binding_subgroep.svg",
   width = 12,
-  height = 4
+  height = 5
 )
 
 # fig dagelijks niet dagelijks amsterdam
 pub_tabel_ams_sd_centrum$ams_sub |>
   mutate(monitor = factor(monitor, levels = lev_monitor)) |>
   my_plot(
+    color_var = blauw_pal[c(9, 7, 5, 3, 1)],
+    x_var = aandeel_gew_omz,
     y_var = fct_rev(monitor),
-    afzet_var = eigen_gebied_centrum
+    fill_var = eigen_gebied_centrum
   ) +
   facet_wrap(~productgroep)
 
 ggsave(
   "04 reports/04 figuren/fig_1_binding_subgroep_centrum.svg",
   width = 12,
-  height = 4
+  height = 5
 )
 
 
@@ -90,20 +98,30 @@ bind_rows(
       productgroep == "doelgericht" ~ "niet-dagelijks: doelgericht",
       productgroep == "recreatief" ~ "niet-dagelijks: recreatief",
       TRUE ~ 'dagelijks'
+    ),
+    productgroep = factor(
+      productgroep,
+      levels = c(
+        "dagelijks",
+        "niet-dagelijks: recreatief",
+        "niet-dagelijks: doelgericht",
+        "niet-dagelijks: totaal"
+      )
     )
   ) |>
-
   my_plot(
+    color_var = blauw_pal[c(9, 5, 3, 1)],
+    x_var = aandeel_gew_omz,
     y_var = fct_rev(monitor),
-    afzet_var = eigen_gebied
+    fill_var = eigen_gebied
   ) +
-  facet_wrap(~productgroep, nrow = 1)
+  facet_wrap(~productgroep, nrow = 2)
 
 
 ggsave(
   "04 reports/04 figuren/fig_1_binding_prod_en_sub_groep.svg",
-  width = 12,
-  height = 4
+  width = 10,
+  height = 5
 )
 
 bind_rows(
@@ -117,19 +135,22 @@ bind_rows(
       productgroep == "niet-dagelijks" ~ "niet-dagelijks: totaal",
       productgroep == "doelgericht" ~ "niet-dagelijks: doelgericht",
       productgroep == "recreatief" ~ "niet-dagelijks: recreatief",
-      TRUE ~ 'dagelijks' )
+      TRUE ~ 'dagelijks'
+    )
   ) |>
   my_plot(
+    color_var = blauw_pal[c(9, 7, 5, 3, 1)],
+    x_var = aandeel_gew_omz,
     y_var = fct_rev(monitor),
-    afzet_var = eigen_gebied_centrum
+    fill_var = eigen_gebied_centrum
   ) +
-  facet_wrap(~productgroep, nrow = 1)
+  facet_wrap(~productgroep, nrow = 2)
 
 
 ggsave(
   "04 reports/04 figuren/fig_1_binding_prod_en_sub_groep_centrum.svg",
-  width = 12,
-  height = 4
+  width = 10,
+  height = 5
 )
 
 
@@ -137,8 +158,10 @@ ggsave(
 pub_tabel_ams_sd_tot$ams_prodgroep |>
 
   my_plot(
+    color_var = blauw_pal[c(9, 5, 3, 1)],
+    x_var = aandeel_gew_omz,
     y_var = fct_rev(monitor),
-    afzet_var = eigen_gebied
+    fill_var = eigen_gebied
   ) +
   facet_wrap(~productgroep)
 
@@ -148,13 +171,53 @@ ggsave(
   height = 6
 )
 
+# alleen recreatief
+pub_tabel_ams_sd_tot$ams_prodgroep |>
+  filter(
+    productgroep %in%
+      c("modeartikelen", "huishoudelijk", "media", "sportspel")
+  ) |>
+  my_plot(
+    color_var = blauw_pal[c(9, 5, 3, 1)],
+    x_var = aandeel_gew_omz,
+    y_var = fct_rev(monitor),
+    fill_var = eigen_gebied
+  ) +
+  facet_wrap(~productgroep, nrow = 2)
+ggsave(
+  "04 reports/04 figuren/fig_1_binding_prodgroep_recr.svg",
+  width = 10,
+  height = 5
+)
+
+# allen doelgericht
+pub_tabel_ams_sd_tot$ams_prodgroep |>
+  filter(
+    productgroep %in%
+      c("elektronica", "woninginrichting", "planten", "doehetzelf")
+  ) |>
+  my_plot(
+    color_var = blauw_pal[c(9, 5, 3, 1)],
+    x_var = aandeel_gew_omz,
+    y_var = fct_rev(monitor),
+    fill_var = eigen_gebied
+  ) +
+  facet_wrap(~productgroep, nrow = 2)
+ggsave(
+  "04 reports/04 figuren/fig_1_binding_prodgroep_doelg.svg",
+  width = 10,
+  height = 5
+)
+
 
 # fig dagelijks niet dagelijks stadsdelen
 pub_tabel_ams_sd_centrum$ams_prodgroep |>
 
   my_plot(
+    color_var = blauw_pal[c(9, 7, 5, 3, 1)],
+    x_var = aandeel_gew_omz,
     y_var = fct_rev(monitor),
-    afzet_var = eigen_gebied_centrum
+    fill_var = eigen_gebied_centrum
   ) +
   facet_wrap(~productgroep)
 
@@ -165,10 +228,6 @@ ggsave(
 )
 
 
-
-
-
-
 # fig dagelijks niet dagelijks naar stadsdeel
 pub_tabel_sd_sd_tot$ams_hoofd |>
   mutate(
@@ -184,15 +243,17 @@ pub_tabel_sd_sd_tot$ams_hoofd |>
     woon_gebied_naam != 'Weesp' | monitor != 'monitor 2022'
   ) |>
   my_plot(
+    color_var = blauw_pal[c(9, 7, 5, 3, 1)],
+    x_var = aandeel_gew_omz,
     y_var = fct_rev(woon_gebied_naam),
-    afzet_var = eigen_gebied
+    fill_var = eigen_gebied
   ) +
-  facet_wrap(~monitor, nrow = 1)
+  facet_wrap(~monitor, nrow = 2)
 
 ggsave(
   "04 reports/04 figuren/fig_2_binding_dagelijks_sd.svg",
-  width = 12,
-  height = 4
+  width = 10,
+  height = 6
 )
 
 
@@ -212,7 +273,9 @@ pub_tabel_sd_sd_centrum$ams_hoofd |>
   ) |>
   my_plot(
     y_var = fct_rev(woon_gebied_naam),
-    afzet_var = eigen_gebied_centrum
+    fill_var = eigen_gebied_centrum,
+    color_var = blauw_pal[c(9, 7, 6, 5, 3, 1)],
+    x_var = aandeel_gew_omz
   ) +
   facet_wrap(~monitor, nrow = 1)
 
@@ -223,7 +286,6 @@ ggsave(
 )
 
 
-
 # fig dagelijks niet dagelijks naar stadsdeel
 pub_tabel_sd_sd_tot$ams_hoofd |>
   mutate(
@@ -240,7 +302,9 @@ pub_tabel_sd_sd_tot$ams_hoofd |>
   ) |>
   my_plot(
     y_var = fct_rev(woon_gebied_naam),
-    afzet_var = eigen_gebied
+    fill_var = eigen_gebied,
+    color_var = blauw_pal[c(9, 7, 5, 3, 1)],
+    x_var = aandeel_gew_omz
   ) +
   facet_wrap(~monitor, nrow = 1)
 
@@ -249,16 +313,6 @@ ggsave(
   width = 12,
   height = 4
 )
-
-
-
-
-
-
-
-
-
-
 
 
 # fig dagelijks niet dagelijks naar stadsdeel
@@ -277,7 +331,9 @@ pub_tabel_sd_sd_centrum$ams_hoofd |>
   ) |>
   my_plot(
     y_var = fct_rev(woon_gebied_naam),
-    afzet_var = eigen_gebied_centrum
+    fill_var = eigen_gebied_centrum,
+    color_var = blauw_pal[c(9, 7, 6, 5, 3, 1)],
+    x_var = aandeel_gew_omz
   ) +
   facet_wrap(~monitor, nrow = 1)
 
@@ -304,14 +360,16 @@ pub_tabel_sd_sd_centrum$ams_sub |>
   ) |>
   my_plot(
     y_var = fct_rev(woon_gebied_naam),
-    afzet_var = eigen_gebied_centrum
+    fill_var = eigen_gebied_centrum,
+    color_var = blauw_pal[c(9, 7, 6, 5, 3, 1)],
+    x_var = aandeel_gew_omz
   ) +
-  facet_wrap(~monitor, nrow = 1)
+  facet_wrap(~monitor, nrow = 2)
 
 ggsave(
   "04 reports/04 figuren/fig_2_binding_recreatief_sd_centrum.svg",
-  width = 12,
-  height = 4
+  width = 10,
+  height = 5
 )
 
 
@@ -331,24 +389,20 @@ pub_tabel_sd_sd_centrum$ams_sub |>
   ) |>
   my_plot(
     y_var = fct_rev(woon_gebied_naam),
-    afzet_var = eigen_gebied_centrum
+    fill_var = eigen_gebied_centrum,
+    color_var = blauw_pal[c(9, 7, 6, 5, 3, 1)],
+    x_var = aandeel_gew_omz
   ) +
-  facet_wrap(~monitor, nrow = 1)
+  facet_wrap(~monitor, nrow = 2)
 
 ggsave(
   "04 reports/04 figuren/fig_2_binding_doelgericht_sd_centrum.svg",
-  width = 12,
-  height = 4
+  width = 10,
+  height = 5
 )
 
 
-
-
-
-
 ######
-
-
 
 # fig dagelijks niet dagelijks naar stadsdeel
 pub_tabel_sd_sd_tot$ams_sub |>
@@ -363,7 +417,9 @@ pub_tabel_sd_sd_tot$ams_sub |>
   ) |>
   my_plot(
     y_var = fct_rev(woon_gebied_naam),
-    afzet_var = eigen_gebied
+    fill_var = eigen_gebied,
+    color_var = blauw_pal[c(9, 7, 5, 3, 1)],
+    x_var = aandeel_gew_omz
   ) +
   facet_wrap(~productgroep, nrow = 1)
 
@@ -372,9 +428,6 @@ ggsave(
   width = 12,
   height = 4
 )
-
-
-
 
 
 # fig dagelijks niet dagelijks naar stadsdeel
@@ -390,7 +443,9 @@ pub_tabel_sd_sd_centrum$ams_sub |>
   ) |>
   my_plot(
     y_var = fct_rev(woon_gebied_naam),
-    afzet_var = eigen_gebied_centrum
+    fill_var = eigen_gebied_centrum,
+    color_var = blauw_pal[c(9, 7, 6, 5, 3, 1)],
+    x_var = aandeel_gew_omz
   ) +
   facet_wrap(~productgroep, nrow = 1)
 
@@ -399,10 +454,6 @@ ggsave(
   width = 12,
   height = 4
 )
-
-
-
-
 
 
 ### kaarten met binding per ggw-gebied ---
@@ -432,7 +483,12 @@ df_gebied <- bind_rows(
     value_kl_labels = gtools::quantcut(
       aandeel_gew_omz,
       4,
-      labels = c("veel lager dan gem", "lager", "hoger", "veel hoger dan gem")
+      labels = c(
+        "veel lager dan gemiddelde",
+        "lager dan gemiddelde",
+        "hoger dan gemiddelde",
+        "veel hoger dan gemiddelde"
+      )
     )
   ) |>
   mutate(
@@ -441,6 +497,15 @@ df_gebied <- bind_rows(
       productgroep == 'niet-dagelijks' ~ 'niet-dagelijks: totaal',
       productgroep == 'recreatief' ~ 'niet-dagelijks: recreatief',
       productgroep == 'doelgericht' ~ 'niet-dagelijks: doelgericht'
+    ),
+    productgroep = factor(
+      productgroep,
+      levels = c(
+        "dagelijks",
+        "niet-dagelijks: recreatief",
+        "niet-dagelijks: doelgericht",
+        "niet-dagelijks: totaal"
+      )
     )
   )
 
@@ -472,7 +537,7 @@ ggplot() +
   scale_fill_manual(name = NULL, values = blauw_pal[c(6, 4, 2, 1)]) +
   scale_color_manual(name = NULL, values = label_col[c(6, 4, 2, 1)]) +
   guides(
-    fill = guide_legend(nrow = 1, reverse = F),
+    fill = guide_legend(ncol = 2, reverse = F),
     colour = "none"
   )
 

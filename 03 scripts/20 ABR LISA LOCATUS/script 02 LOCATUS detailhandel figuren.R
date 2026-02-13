@@ -10,18 +10,13 @@ source(
 df_loc_ams |>
   # bij horeca en diensten is de winkelvloeroppervlakte pas beschikbaar vanaf 2020
   filter(
-    dg_nd != 'leegstand',
-    case_when(
-      dg_nd == "horeca en vrije tijd" ~ name != 'winkelvloeroppervlakte (m2)',
-      dg_nd == "diensten" ~ name != 'winkelvloeroppervlakte (m2)',
-      TRUE ~ name %in% c('winkelvloeroppervlakte (m2)', 'aantal vestigingen')
-    )
+    dg_nd %in% c('detailhandel dagelijks', 'detailhandel niet-dagelijks')
   ) |>
   ggplot(aes(
     x = lubridate::year(peildatum),
     y = value,
-    group = dg_nd,
-    colour = dg_nd
+    group = rec_doel,
+    colour = rec_doel
   )) +
   geom_line(linewidth = 0.9) +
   labs(y = NULL, x = NULL) +
@@ -38,10 +33,12 @@ df_loc_ams |>
     labels = scales::label_comma(big.mark = ".", decimal.mark = ",")
   ) +
   facet_wrap(~name, scale = 'free_y')
-ggsave("04 reports/04 figuren/fig_locatus_01.svg", width = 12, height = 4)
+ggsave("04 reports/04 figuren/fig_locatus_01.svg", width = 12, height = 5)
 
 ### functie voor staafdiagrammen ---
 # defaultkleurenschema - blauwpal
+df_loc_totaal <- df_loc_totaal |>
+  filter(gbd_sdl_naam != 'null')
 
 ### percentage leegstand per stadsdeel ---
 df_loc_totaal |>
@@ -49,43 +46,76 @@ df_loc_totaal |>
   filter(
     gbd_sdl_code != 'B',
     dg_nd == 'leegstand',
-    peildatum %in% c("2019", "2025")
+    peildatum %in% c("2015", "2020", "2025")
   ) |>
+
   my_col_figure(aan_per = 'aandeel')
 ggsave(
   "04 reports/04 figuren/fig_locatus_02_leegstand.svg",
   width = 12,
-  height = 5
+  height = 7
 )
 
 ### vestigignen en oppervlakte dagelijks ---
 df_loc_totaal |>
   # bij horeca en diensten is de winkelvloeroppervlakte pas beschikbaar vanaf 2020
   filter(
-    gbd_sdl_naam != 'Westpoort',
+    gbd_sdl_code != 'B',
     gbd_sdl_naam != 'Amsterdam',
     dg_nd == 'detailhandel dagelijks',
-    peildatum %in% c("2019", "2025")
+    peildatum %in% c("2015", "2020", "2025")
   ) |>
   my_col_figure(aan_per = 'value')
 ggsave(
   "04 reports/04 figuren/fig_locatus_02_dagelijks.svg",
   width = 12,
-  height = 5
+  height = 7
 )
 
-#### vestigignen en oppervlakte niet-dagelijks ---
+#### vestigignen en oppervlakte niet-dagelijks klopt niet meer
+# df_loc_totaal |>
+#   # bij horeca en diensten is de winkelvloeroppervlakte pas beschikbaar vanaf 2020
+#   filter(
+#     gbd_sdl_naam != 'Amsterdam',
+#     dg_nd == 'detailhandel niet-dagelijks',
+#     peildatum %in% c("2015", "2020", "2025")
+#   ) |>
+#   my_col_figure(aan_per = 'value')
+# ggsave(
+#   "04 reports/04 figuren/fig_locatus_02_niet-dagelijks.svg",
+#   width = 12,
+#   height = 6
+# )
+
+#### vestigignen en oppervlakte recreatief ---
 df_loc_totaal |>
   # bij horeca en diensten is de winkelvloeroppervlakte pas beschikbaar vanaf 2020
   filter(
-    gbd_sdl_naam != 'Westpoort',
+    gbd_sdl_code != 'B',
     gbd_sdl_naam != 'Amsterdam',
-    dg_nd == 'detailhandel niet-dagelijks',
-    peildatum %in% c("2019", "2025")
+    rec_doel == 'recreatief',
+    peildatum %in% c("2015", "2020", "2025")
   ) |>
   my_col_figure(aan_per = 'value')
 ggsave(
-  "04 reports/04 figuren/fig_locatus_02_niet-dagelijks.svg",
+  "04 reports/04 figuren/fig_locatus_02_recreatief.svg",
   width = 12,
-  height = 5
+  height = 7
+)
+
+#### vestigignen en oppervlakte doelgericht ---
+df_loc_totaal |>
+  # bij horeca en diensten is de winkelvloeroppervlakte pas beschikbaar vanaf 2020
+  filter(
+    gbd_sdl_naam != 'null',
+    gbd_sdl_code != 'B',
+    gbd_sdl_naam != 'Amsterdam',
+    rec_doel == 'doelgericht',
+    peildatum %in% c("2015", "2020", "2025")
+  ) |>
+  my_col_figure(aan_per = 'value')
+ggsave(
+  "04 reports/04 figuren/fig_locatus_02_doelgericht.svg",
+  width = 12,
+  height = 7
 )

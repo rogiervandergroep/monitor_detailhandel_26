@@ -206,4 +206,12 @@ data_totaal = list(
   data_26_weeg = data_26_weeg
 )
 
+# toevoegen jaargang
+jaren <- c("monitor 2020", "monitor 2022", "monitor 2024", "monitor 2026")
+
+
+data_totaal <- data_totaal |>
+  map2(jaren, \(x, y) add_column(x, monitor = y))
+
+
 write_rds(data_totaal, "01 references/data_totaal_20_22_24_26.rds")

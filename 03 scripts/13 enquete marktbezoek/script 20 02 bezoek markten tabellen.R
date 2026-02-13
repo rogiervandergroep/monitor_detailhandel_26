@@ -338,6 +338,8 @@ tabel_list[['achtergrond']] <- bind_rows(
 
 
 write_rds(tabel_list, "01 references/tabellen_markt_basis.rds")
+
+
 write.xlsx(
   tabel_list,
   "04 reports/03 tabellen/markten_basis.xlsx",

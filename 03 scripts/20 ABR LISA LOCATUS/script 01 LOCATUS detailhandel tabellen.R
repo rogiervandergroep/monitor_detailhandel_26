@@ -2,9 +2,13 @@
 #  tbv monitor detailhandel 2026
 #  rogier van der groep
 
-source(
-  "02 scr/03 script references.R"
-)
+source("02 scr/01 script factor levels.R")
+
+#source("02 scr/02 script gebiedsindelingen BBGA.R")
+
+source("02 scr/03 script ggplot functies.R")
+
+
 source(
   "03 scripts/20 ABR LISA LOCATUS/script 01 LOCATUS detailhandel functies.R"
 )
@@ -19,7 +23,7 @@ data_locatus <- readr::read_csv(
 # amsterdam totaal
 df_loc_ams <- data_locatus |>
   my_group_by() |>
-  group_by(peildatum, dg_nd) |>
+  group_by(peildatum, dg_nd, rec_doel) |>
   my_summarise() |>
   group_by(peildatum, name) |>
   mutate(aandeel = value / sum(value)) |>
@@ -31,7 +35,7 @@ df_loc_ams <- data_locatus |>
 # naar stadsdelen
 df_loc_sd <- data_locatus |>
   my_group_by() |>
-  group_by(peildatum, gbd_sdl_code, gbd_sdl_naam, dg_nd) |>
+  group_by(peildatum, gbd_sdl_code, gbd_sdl_naam, dg_nd, rec_doel) |>
   my_summarise() |>
   group_by(peildatum, gbd_sdl_code, gbd_sdl_naam, name) |>
   mutate(aandeel = value / sum(value))
@@ -58,11 +62,10 @@ df_loc_totaal <- bind_rows(
   )
 
 
-# tabel met totalen 2019 2025
+# tabel met totalen
 tab_totaal <- df_loc_totaal |>
   filter(
     dg_nd %in% c('detailhandel dagelijks', 'detailhandel niet-dagelijks'),
-    peildatum %in% c('2019', '2025'),
     type == 'value',
     gbd_sdl_code == '0363'
   ) |>
@@ -78,7 +81,7 @@ data_locatus_wg <- readr::read_csv2(
   "00 data/ruw locatus/tabel_locatus_leegst_winkelgeb.csv"
 ) |>
   filter(
-    peildatum %in% c('2025-01-01', '2022-01-01', '2019-01-01'),
+    peildatum %in% c('2015-01-01', '2020-01-01', '2025-01-01'),
     !is.na(winkelgebied_code),
     groep != '45-Transp&Brand',
     groep != '80-ATM'

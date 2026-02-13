@@ -340,7 +340,13 @@ gem_rap_filter <- gem_rap |>
   map(\(x) filter(x, wink_stadsdeel_code != "onbekend")) |>
   map(\(x) filter(x, wink_stadsdeel_code != "online")) |>
   map(\(x) filter(x, !str_detect(wink_naam, "overig"))) |>
-  map_df(\(x) select(x, monitor, name, label, everything()))
+  map_df(\(x) select(x, monitor, name, label, everything())) |>
+  mutate(
+    winkelgebied_oisnaam = case_when(
+      is.na(winkelgebied_oisnaam) ~ wink_naam,
+      TRUE ~ winkelgebied_oisnaam
+    )
+  )
 
 openxlsx::write.xlsx(
   gem_rap_filter,
@@ -625,20 +631,111 @@ fig_sd_veiligavond <- ggplot() +
 #   GG TILES         #
 ######################
 
-# # figuur met rapportcijfers 2026 dagelijks boodschappen
-gem_rap_filter$rap_26 |>
-  filter(productgroep == 'winkelgebied voor dagelijkse boodschappen') |>
+hcl <- farver::decode_colour(hcl.colors(20, "RdYlgn"), "rgb", "hcl")
+
+label_col <- ifelse(hcl[, "l"] > 50, "black", "white")
+
+
+# # figuur met totaaloordeel winkelgebieden
+gem_rap_filter |>
+  mutate(monitor = str_replace_all(monitor, "monitor ", "")) |>
+  filter(
+    wink_code != 32,
+    winkelgebied_oisnaam != 'Oost Overig, Oost'
+  ) |>
+
+  mutate(
+    winkelgebied_oisnaam = str_replace_all(
+      winkelgebied_oisnaam,
+      "stadsdelen",
+      "gemiddelde stadsdeel"
+    )
+  ) |>
+  # mutate(
+  #   wink_stadsdeel_naam = case_when(
+  #     wink_stadsdeel_naam == 'Weesp'    ~ 'Zuidoost en Weesp',
+  #     wink_stadsdeel_naam == 'Zuidoost' ~ 'Zuidoost en Weesp',
+  #     TRUE ~ wink_stadsdeel_naam))|>
+  filter(
+    # !is.na(winkelgebied_oisnaam),
+    productgroep == 'winkelgebied voor dagelijkse boodschappen',
+    label == 'totaaloordeel winkelgebied?',
+    wink_stadsdeel_naam != 'Amsterdam',
+    wink_stadsdeel_naam != 'MRA',
+    wink_stadsdeel_naam != 'Buiten MRA',
+  ) |>
 
   ggplot(aes(
-    x = label,
-    y = wink_code,
+    x = monitor,
+    y = fct_relevel(
+      fct_reorder(winkelgebied_oisnaam, gem_gewogen),
+      'gemiddelde stadsdeel'
+    ),
     fill = gem_gewogen
   )) +
   geom_tile(color = "white", lwd = 0.9, linetype = 1) +
+  geom_text(
+    aes(
+      label = round(gem_gewogen, 1),
+      color = gem_gewogen
+    ),
+    family = font
+  ) +
   labs(title = NULL, x = NULL, y = NULL) +
   scale_fill_gradientn(colors = hcl.colors(20, "RdYlgn")) +
-  theme_os() +
-  coord_fixed(0.6)
+  scale_color_gradientn(name = NULL, colors = label_col) +
+  theme_os(legend_position = 'right') +
+  #coord_fixed(0.6)+
+  facet_wrap(~wink_stadsdeel_naam, scales = 'free_y', ncol = 2) +
+  guides(color = 'none')
+
+ggsave(
+  "04 reports/04 figuren/tile_rapportcifer_dagelijks.svg",
+  width = 12,
+  height = 10
+)
+
+
+# # figuur met totaaloordeel winkelgebieden
+gem_rap_filter |>
+  mutate(monitor = str_replace_all(monitor, "monitor ", "")) |>
+  filter(
+    wink_naam != 'stadsdelen',
+    productgroep == 'winkelgebied om te winkelen',
+    label == 'totaaloordeel winkelgebied?'
+  ) |>
+  mutate(
+    wink_naam = case_when(
+      wink_code == '312' ~ 'Weesp, Centrum',
+      TRUE ~ wink_naam
+    )
+  ) |>
+  ggplot(aes(
+    x = monitor,
+    y = fct_reorder(winkelgebied_oisnaam, gem_gewogen),
+    fill = gem_gewogen
+  )) +
+  geom_tile(color = "white", lwd = 0.9, linetype = 1) +
+  geom_text(
+    aes(
+      label = round(gem_gewogen, 1),
+      color = gem_gewogen
+    ),
+    family = font
+  ) +
+  labs(title = NULL, x = NULL, y = NULL) +
+  scale_fill_gradientn(colors = hcl.colors(20, "RdYlgn")) +
+  scale_color_gradientn(name = NULL, colors = label_col) +
+  theme_os(legend_position = 'right') +
+  #coord_fixed(0.6)+
+  # facet_wrap(~wink_stadsdeel_naam, scales = 'free_y', ncol =2)+
+  guides(color = 'none')
+
+ggsave(
+  "04 reports/04 figuren/tile_rapportcifer_niet-dagelijks.svg",
+  width = 12,
+  height = 8
+)
 
 ######HIER SPECIFICEREN ######
 #Naar kort winkel naam en bvb thema veiligheid
